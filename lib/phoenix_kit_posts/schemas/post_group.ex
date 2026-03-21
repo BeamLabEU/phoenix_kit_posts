@@ -67,26 +67,29 @@ defmodule PhoenixKitPosts.PostGroup do
         }
 
   schema "phoenix_kit_post_groups" do
-    field :name, :string
-    field :slug, :string
-    field :description, :string
-    field :post_count, :integer, default: 0
-    field :is_public, :boolean, default: false
-    field :position, :integer, default: 0
+    field(:name, :string)
+    field(:slug, :string)
+    field(:description, :string)
+    field(:post_count, :integer, default: 0)
+    field(:is_public, :boolean, default: false)
+    field(:position, :integer, default: 0)
 
-    belongs_to :user, PhoenixKit.Users.Auth.User,
+    belongs_to(:user, PhoenixKit.Users.Auth.User,
       foreign_key: :user_uuid,
       references: :uuid,
       type: UUIDv7
+    )
 
-    belongs_to :cover_image, PhoenixKit.Modules.Storage.File,
+    belongs_to(:cover_image, PhoenixKit.Modules.Storage.File,
       foreign_key: :cover_image_uuid,
       references: :uuid,
       type: UUIDv7
+    )
 
-    many_to_many :posts, PhoenixKitPosts.Post,
+    many_to_many(:posts, PhoenixKitPosts.Post,
       join_through: PhoenixKitPosts.PostGroupAssignment,
       join_keys: [group_uuid: :uuid, post_uuid: :uuid]
+    )
 
     timestamps(type: :utc_datetime)
   end

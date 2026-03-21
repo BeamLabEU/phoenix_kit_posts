@@ -44,13 +44,14 @@ defmodule PhoenixKitPosts.PostTag do
         }
 
   schema "phoenix_kit_post_tags" do
-    field :name, :string
-    field :slug, :string
-    field :usage_count, :integer, default: 0
+    field(:name, :string)
+    field(:slug, :string)
+    field(:usage_count, :integer, default: 0)
 
-    many_to_many :posts, PhoenixKitPosts.Post,
+    many_to_many(:posts, PhoenixKitPosts.Post,
       join_through: PhoenixKitPosts.PostTagAssignment,
       join_keys: [tag_uuid: :uuid, post_uuid: :uuid]
+    )
 
     timestamps(type: :utc_datetime)
   end

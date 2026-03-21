@@ -49,11 +49,11 @@ defmodule PhoenixKitPosts.PostMedia do
         }
 
   schema "phoenix_kit_post_media" do
-    field :position, :integer
-    field :caption, :string
+    field(:position, :integer)
+    field(:caption, :string)
 
-    belongs_to :post, PhoenixKitPosts.Post, foreign_key: :post_uuid, references: :uuid
-    belongs_to :file, PhoenixKit.Modules.Storage.File, foreign_key: :file_uuid, references: :uuid
+    belongs_to(:post, PhoenixKitPosts.Post, foreign_key: :post_uuid, references: :uuid)
+    belongs_to(:file, PhoenixKit.Modules.Storage.File, foreign_key: :file_uuid, references: :uuid)
 
     timestamps(type: :utc_datetime)
   end

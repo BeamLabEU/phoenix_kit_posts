@@ -39,7 +39,9 @@ defmodule PhoenixKitPosts.Web.Details do
     project_title = Settings.get_project_title()
 
     # Load post with all associations
-    case PhoenixKitPosts.get_post!(post_uuid, preload: [:user, [media: :file], :tags, :groups, :mentions]) do
+    case PhoenixKitPosts.get_post!(post_uuid,
+           preload: [:user, [media: :file], :tags, :groups, :mentions]
+         ) do
       nil ->
         {:ok,
          socket
@@ -84,7 +86,9 @@ defmodule PhoenixKitPosts.Web.Details do
       PhoenixKitPosts.unlike_post(post.uuid, current_user.uuid)
 
       updated_post =
-        PhoenixKitPosts.get_post!(post.uuid, preload: [:user, [media: :file], :tags, :groups, :mentions])
+        PhoenixKitPosts.get_post!(post.uuid,
+          preload: [:user, [media: :file], :tags, :groups, :mentions]
+        )
 
       {:noreply,
        socket
@@ -95,7 +99,9 @@ defmodule PhoenixKitPosts.Web.Details do
       PhoenixKitPosts.like_post(post.uuid, current_user.uuid)
 
       updated_post =
-        PhoenixKitPosts.get_post!(post.uuid, preload: [:user, [media: :file], :tags, :groups, :mentions])
+        PhoenixKitPosts.get_post!(post.uuid,
+          preload: [:user, [media: :file], :tags, :groups, :mentions]
+        )
 
       {:noreply,
        socket

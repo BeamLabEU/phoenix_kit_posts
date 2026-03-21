@@ -33,15 +33,17 @@ defmodule PhoenixKitPosts.PostLike do
         }
 
   schema "phoenix_kit_post_likes" do
-    belongs_to :post, PhoenixKitPosts.Post,
+    belongs_to(:post, PhoenixKitPosts.Post,
       foreign_key: :post_uuid,
       references: :uuid,
       type: UUIDv7
+    )
 
-    belongs_to :user, PhoenixKit.Users.Auth.User,
+    belongs_to(:user, PhoenixKit.Users.Auth.User,
       foreign_key: :user_uuid,
       references: :uuid,
       type: UUIDv7
+    )
 
     timestamps(type: :utc_datetime)
   end

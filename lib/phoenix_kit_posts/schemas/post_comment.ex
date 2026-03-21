@@ -25,37 +25,39 @@ defmodule PhoenixKitPosts.PostComment do
           parent: t() | Ecto.Association.NotLoaded.t() | nil,
           children: [t()] | Ecto.Association.NotLoaded.t(),
           likes: [PhoenixKitPosts.CommentLike.t()] | Ecto.Association.NotLoaded.t(),
-          dislikes:
-            [PhoenixKitPosts.CommentDislike.t()] | Ecto.Association.NotLoaded.t(),
+          dislikes: [PhoenixKitPosts.CommentDislike.t()] | Ecto.Association.NotLoaded.t(),
           inserted_at: DateTime.t() | nil,
           updated_at: DateTime.t() | nil
         }
 
   schema "phoenix_kit_post_comments" do
-    field :content, :string
-    field :status, :string, default: "published"
-    field :depth, :integer, default: 0
-    field :like_count, :integer, default: 0
-    field :dislike_count, :integer, default: 0
+    field(:content, :string)
+    field(:status, :string, default: "published")
+    field(:depth, :integer, default: 0)
+    field(:like_count, :integer, default: 0)
+    field(:dislike_count, :integer, default: 0)
 
-    belongs_to :post, PhoenixKitPosts.Post,
+    belongs_to(:post, PhoenixKitPosts.Post,
       foreign_key: :post_uuid,
       references: :uuid,
       type: UUIDv7
+    )
 
-    belongs_to :user, PhoenixKit.Users.Auth.User,
+    belongs_to(:user, PhoenixKit.Users.Auth.User,
       foreign_key: :user_uuid,
       references: :uuid,
       type: UUIDv7
+    )
 
-    belongs_to :parent, __MODULE__,
+    belongs_to(:parent, __MODULE__,
       foreign_key: :parent_uuid,
       references: :uuid,
       type: UUIDv7
+    )
 
-    has_many :children, __MODULE__, foreign_key: :parent_uuid
-    has_many :likes, PhoenixKitPosts.CommentLike, foreign_key: :comment_uuid
-    has_many :dislikes, PhoenixKitPosts.CommentDislike, foreign_key: :comment_uuid
+    has_many(:children, __MODULE__, foreign_key: :parent_uuid)
+    has_many(:likes, PhoenixKitPosts.CommentLike, foreign_key: :comment_uuid)
+    has_many(:dislikes, PhoenixKitPosts.CommentDislike, foreign_key: :comment_uuid)
 
     timestamps(type: :utc_datetime)
   end

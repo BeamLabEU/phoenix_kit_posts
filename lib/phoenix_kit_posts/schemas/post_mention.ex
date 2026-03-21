@@ -49,17 +49,19 @@ defmodule PhoenixKitPosts.PostMention do
         }
 
   schema "phoenix_kit_post_mentions" do
-    field :mention_type, :string, default: "mention"
+    field(:mention_type, :string, default: "mention")
 
-    belongs_to :post, PhoenixKitPosts.Post,
+    belongs_to(:post, PhoenixKitPosts.Post,
       foreign_key: :post_uuid,
       references: :uuid,
       type: UUIDv7
+    )
 
-    belongs_to :user, PhoenixKit.Users.Auth.User,
+    belongs_to(:user, PhoenixKit.Users.Auth.User,
       foreign_key: :user_uuid,
       references: :uuid,
       type: UUIDv7
+    )
 
     timestamps(type: :utc_datetime)
   end

@@ -20,15 +20,17 @@ defmodule PhoenixKitPosts.CommentDislike do
         }
 
   schema "phoenix_kit_comment_dislikes" do
-    belongs_to :comment, PhoenixKitPosts.PostComment,
+    belongs_to(:comment, PhoenixKitPosts.PostComment,
       foreign_key: :comment_uuid,
       references: :uuid,
       type: UUIDv7
+    )
 
-    belongs_to :user, PhoenixKit.Users.Auth.User,
+    belongs_to(:user, PhoenixKit.Users.Auth.User,
       foreign_key: :user_uuid,
       references: :uuid,
       type: UUIDv7
+    )
 
     timestamps(type: :utc_datetime)
   end

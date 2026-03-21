@@ -25,7 +25,6 @@ defmodule PhoenixKitPosts.Web.Groups do
 
   require Logger
 
-
   alias PhoenixKit.Settings
   alias PhoenixKit.Utils.Routes
 

@@ -36,7 +36,6 @@ defmodule PhoenixKitPosts.Web.Posts do
 
   require Logger
 
-
   alias PhoenixKit.Settings
   alias PhoenixKit.Utils.Routes
 

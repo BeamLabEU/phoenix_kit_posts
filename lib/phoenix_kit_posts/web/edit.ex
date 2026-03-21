@@ -41,7 +41,9 @@ defmodule PhoenixKitPosts.Web.Edit do
     socket =
       if post_uuid do
         # Editing existing post
-        case PhoenixKitPosts.get_post!(post_uuid, preload: [:user, :media, :tags, :groups, :mentions]) do
+        case PhoenixKitPosts.get_post!(post_uuid,
+               preload: [:user, :media, :tags, :groups, :mentions]
+             ) do
           nil ->
             socket
             |> put_flash(:error, "Post not found")

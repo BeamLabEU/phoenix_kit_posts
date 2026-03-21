@@ -110,39 +110,42 @@ defmodule PhoenixKitPosts.Post do
         }
 
   schema "phoenix_kit_posts" do
-    field :title, :string
-    field :sub_title, :string
-    field :content, :string
-    field :type, :string, default: "post"
-    field :status, :string, default: "draft"
-    field :scheduled_at, :utc_datetime
-    field :published_at, :utc_datetime
-    field :repost_url, :string
-    field :slug, :string
-    field :like_count, :integer, default: 0
-    field :dislike_count, :integer, default: 0
-    field :comment_count, :integer, default: 0
-    field :view_count, :integer, default: 0
-    field :metadata, :map, default: %{}
+    field(:title, :string)
+    field(:sub_title, :string)
+    field(:content, :string)
+    field(:type, :string, default: "post")
+    field(:status, :string, default: "draft")
+    field(:scheduled_at, :utc_datetime)
+    field(:published_at, :utc_datetime)
+    field(:repost_url, :string)
+    field(:slug, :string)
+    field(:like_count, :integer, default: 0)
+    field(:dislike_count, :integer, default: 0)
+    field(:comment_count, :integer, default: 0)
+    field(:view_count, :integer, default: 0)
+    field(:metadata, :map, default: %{})
 
-    belongs_to :user, PhoenixKit.Users.Auth.User,
+    belongs_to(:user, PhoenixKit.Users.Auth.User,
       foreign_key: :user_uuid,
       references: :uuid,
       type: UUIDv7
+    )
 
-    has_many :media, PhoenixKitPosts.PostMedia, foreign_key: :post_uuid
-    has_many :likes, PhoenixKitPosts.PostLike, foreign_key: :post_uuid
-    has_many :dislikes, PhoenixKitPosts.PostDislike, foreign_key: :post_uuid
-    has_many :comments, PhoenixKitPosts.PostComment, foreign_key: :post_uuid
-    has_many :mentions, PhoenixKitPosts.PostMention, foreign_key: :post_uuid
+    has_many(:media, PhoenixKitPosts.PostMedia, foreign_key: :post_uuid)
+    has_many(:likes, PhoenixKitPosts.PostLike, foreign_key: :post_uuid)
+    has_many(:dislikes, PhoenixKitPosts.PostDislike, foreign_key: :post_uuid)
+    has_many(:comments, PhoenixKitPosts.PostComment, foreign_key: :post_uuid)
+    has_many(:mentions, PhoenixKitPosts.PostMention, foreign_key: :post_uuid)
 
-    many_to_many :tags, PhoenixKitPosts.PostTag,
+    many_to_many(:tags, PhoenixKitPosts.PostTag,
       join_through: PhoenixKitPosts.PostTagAssignment,
       join_keys: [post_uuid: :uuid, tag_uuid: :uuid]
+    )
 
-    many_to_many :groups, PhoenixKitPosts.PostGroup,
+    many_to_many(:groups, PhoenixKitPosts.PostGroup,
       join_through: PhoenixKitPosts.PostGroupAssignment,
       join_keys: [post_uuid: :uuid, group_uuid: :uuid]
+    )
 
     timestamps(type: :utc_datetime)
   end

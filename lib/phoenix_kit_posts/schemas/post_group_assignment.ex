@@ -43,19 +43,21 @@ defmodule PhoenixKitPosts.PostGroupAssignment do
         }
 
   schema "phoenix_kit_post_group_assignments" do
-    field :position, :integer, default: 0
+    field(:position, :integer, default: 0)
 
-    belongs_to :post, PhoenixKitPosts.Post,
+    belongs_to(:post, PhoenixKitPosts.Post,
       foreign_key: :post_uuid,
       references: :uuid,
       type: UUIDv7,
       primary_key: true
+    )
 
-    belongs_to :group, PhoenixKitPosts.PostGroup,
+    belongs_to(:group, PhoenixKitPosts.PostGroup,
       foreign_key: :group_uuid,
       references: :uuid,
       type: UUIDv7,
       primary_key: true
+    )
 
     timestamps(type: :utc_datetime)
   end

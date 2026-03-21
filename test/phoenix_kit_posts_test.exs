@@ -91,7 +91,7 @@ defmodule PhoenixKitPostsTest do
         # Skip paths with :id parameter
         unless String.contains?(tab.path, ":") do
           refute String.contains?(tab.path, "_"),
-            "Tab path #{tab.path} contains underscores — use hyphens"
+                 "Tab path #{tab.path} contains underscores — use hyphens"
         end
       end
     end
@@ -99,7 +99,7 @@ defmodule PhoenixKitPostsTest do
     test "all tabs have live_view tuples" do
       for tab <- PhoenixKitPosts.admin_tabs() do
         assert {_module, _action} = tab.live_view,
-          "Tab #{tab.id} is missing live_view tuple"
+               "Tab #{tab.id} is missing live_view tuple"
       end
     end
   end

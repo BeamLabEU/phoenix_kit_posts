@@ -13,7 +13,8 @@ defmodule PhoenixKitPosts.MixProject do
       deps: deps(),
 
       # Hex
-      description: "Posts module for PhoenixKit — blog posts, tags, groups, likes, media, and scheduling",
+      description:
+        "Posts module for PhoenixKit — blog posts, tags, groups, likes, media, and scheduling",
       package: package(),
 
       # Dialyzer

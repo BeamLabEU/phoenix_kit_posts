@@ -57,20 +57,22 @@ defmodule PhoenixKitPosts.PostView do
         }
 
   schema "phoenix_kit_post_views" do
-    field :ip_address, :string
-    field :user_agent_hash, :string
-    field :session_id, :string
-    field :viewed_at, :utc_datetime
+    field(:ip_address, :string)
+    field(:user_agent_hash, :string)
+    field(:session_id, :string)
+    field(:viewed_at, :utc_datetime)
 
-    belongs_to :post, PhoenixKitPosts.Post,
+    belongs_to(:post, PhoenixKitPosts.Post,
       foreign_key: :post_uuid,
       references: :uuid,
       type: UUIDv7
+    )
 
-    belongs_to :user, PhoenixKit.Users.Auth.User,
+    belongs_to(:user, PhoenixKit.Users.Auth.User,
       foreign_key: :user_uuid,
       references: :uuid,
       type: UUIDv7
+    )
 
     timestamps(type: :utc_datetime)
   end
