@@ -82,7 +82,7 @@ defmodule PhoenixKitPosts.Web.GroupEdit do
         "name" => group.name || "",
         "description" => group.description || "",
         "slug" => group.slug || "",
-        "visibility" => group.visibility || "public"
+        "visibility" => if(group.is_public, do: "public", else: "private")
       }
 
       form = Component.to_form(form_data, as: :post_group)
@@ -113,6 +113,12 @@ defmodule PhoenixKitPosts.Web.GroupEdit do
   def handle_event("save", %{"post_group" => group_params}, socket) do
     # Auto-generate slug from name if slug is empty
     group_params = maybe_generate_slug(group_params)
+
+    # Convert visibility string to is_public boolean for schema
+    group_params =
+      group_params
+      |> Map.put("is_public", Map.get(group_params, "visibility") == "public")
+      |> Map.delete("visibility")
 
     save_group(
       socket,

@@ -277,7 +277,6 @@
                     class="input input-bordered w-full"
                     phx-keydown="add_tag"
                     phx-key="Enter"
-                    phx-value-tag=""
                   />
                 </div>
                 <label class="label">
@@ -506,10 +505,14 @@
       textarea.dispatchEvent(new Event('input', { bubbles: true }));
     };
 
-    // Handle exec-js event from server
-    window.addEventListener("phx:exec-js", (e) => {
-      if (e.detail && e.detail.js) {
-        eval(e.detail.js);
+    // Handle media insertion event from server
+    window.addEventListener("phx:insert-media", (e) => {
+      if (e.detail && e.detail.items) {
+        e.detail.items.forEach(function(item) {
+          if (window.postsEditorInsertMedia) {
+            window.postsEditorInsertMedia(item.url, item.type);
+          }
+        });
       }
     });
   </script>

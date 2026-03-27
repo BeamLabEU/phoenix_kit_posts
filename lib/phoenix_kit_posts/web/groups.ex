@@ -143,11 +143,11 @@ defmodule PhoenixKitPosts.Web.Groups do
     |> assign(:loading, false)
   end
 
-  defp format_visibility("public"), do: "Public"
-  defp format_visibility("private"), do: "Private"
+  defp format_visibility(true), do: "Public"
+  defp format_visibility(false), do: "Private"
   defp format_visibility(_), do: "Unknown"
 
-  defp visibility_badge_class("public"), do: "badge-success"
-  defp visibility_badge_class("private"), do: "badge-warning"
+  defp visibility_badge_class(true), do: "badge-success"
+  defp visibility_badge_class(false), do: "badge-warning"
   defp visibility_badge_class(_), do: "badge-ghost"
 end

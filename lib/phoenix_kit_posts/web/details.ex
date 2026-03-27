@@ -39,7 +39,7 @@ defmodule PhoenixKitPosts.Web.Details do
     project_title = Settings.get_project_title()
 
     # Load post with all associations
-    case PhoenixKitPosts.get_post!(post_uuid,
+    case PhoenixKitPosts.get_post(post_uuid,
            preload: [:user, [media: :file], :tags, :groups, :mentions]
          ) do
       nil ->
@@ -49,8 +49,8 @@ defmodule PhoenixKitPosts.Web.Details do
          |> push_navigate(to: Routes.path("/admin/posts"))}
 
       post ->
-        # Increment view count
-        PhoenixKitPosts.increment_view_count(post)
+        # Increment view count (only on connected mount to avoid double-counting)
+        if connected?(socket), do: PhoenixKitPosts.increment_view_count(post)
 
         # Check if current user liked this post
         liked_by_user = PhoenixKitPosts.post_liked_by?(post.uuid, current_user.uuid)

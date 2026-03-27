@@ -185,13 +185,14 @@ defmodule PhoenixKitPosts.Post do
       :slug,
       :metadata
     ])
-    |> validate_required([:user_uuid, :title, :type, :status])
+    |> validate_required([:user_uuid, :title, :content, :type, :status])
     |> validate_inclusion(:type, ["post", "snippet", "repost"])
     |> validate_inclusion(:status, ["draft", "public", "unlisted", "scheduled"])
     |> validate_length(:title, max: 255)
     |> validate_length(:sub_title, max: 500)
     |> validate_scheduled_at()
     |> maybe_generate_slug()
+    |> unique_constraint(:slug)
     |> foreign_key_constraint(:user_uuid)
   end
 

@@ -135,7 +135,7 @@ defmodule PhoenixKitPosts.Web.Posts do
 
   @impl true
   def handle_event("delete_post", %{"id" => post_uuid}, socket) do
-    case PhoenixKitPosts.get_post!(post_uuid) do
+    case PhoenixKitPosts.get_post(post_uuid) do
       nil ->
         {:noreply, socket |> put_flash(:error, "Post not found")}
 
@@ -156,7 +156,7 @@ defmodule PhoenixKitPosts.Web.Posts do
 
   @impl true
   def handle_event("publish_post", %{"id" => post_uuid}, socket) do
-    case PhoenixKitPosts.get_post!(post_uuid) do
+    case PhoenixKitPosts.get_post(post_uuid) do
       nil ->
         {:noreply, socket |> put_flash(:error, "Post not found")}
 
@@ -177,7 +177,7 @@ defmodule PhoenixKitPosts.Web.Posts do
 
   @impl true
   def handle_event("draft_post", %{"id" => post_uuid}, socket) do
-    case PhoenixKitPosts.get_post!(post_uuid) do
+    case PhoenixKitPosts.get_post(post_uuid) do
       nil ->
         {:noreply, socket |> put_flash(:error, "Post not found")}
 
@@ -224,7 +224,7 @@ defmodule PhoenixKitPosts.Web.Posts do
   def handle_event("bulk_publish", _params, socket) do
     count =
       Enum.reduce(socket.assigns.selected_posts, 0, fn post_uuid, acc ->
-        case PhoenixKitPosts.get_post!(post_uuid) do
+        case PhoenixKitPosts.get_post(post_uuid) do
           nil ->
             acc
 
@@ -248,7 +248,7 @@ defmodule PhoenixKitPosts.Web.Posts do
   def handle_event("bulk_delete", _params, socket) do
     count =
       Enum.reduce(socket.assigns.selected_posts, 0, fn post_uuid, acc ->
-        case PhoenixKitPosts.get_post!(post_uuid) do
+        case PhoenixKitPosts.get_post(post_uuid) do
           nil ->
             acc
 
@@ -343,8 +343,13 @@ defmodule PhoenixKitPosts.Web.Posts do
       |> maybe_add_filter(:status, socket.assigns.filter_status)
       |> maybe_add_search(socket.assigns.search_query)
 
+    # Build count opts (same filters, no pagination/preload)
+    count_opts =
+      opts
+      |> Keyword.drop([:page, :per_page, :preload])
+
     posts = PhoenixKitPosts.list_posts(opts)
-    total_count = length(posts)
+    total_count = PhoenixKitPosts.count_posts(count_opts)
 
     socket
     |> assign(:posts, posts)
@@ -353,13 +358,12 @@ defmodule PhoenixKitPosts.Web.Posts do
   end
 
   defp load_stats(socket) do
-    # Load post statistics
     stats = %{
-      total: count_posts([]),
-      drafts: count_posts(status: "draft"),
-      public: count_posts(status: "public"),
-      scheduled: count_posts(status: "scheduled"),
-      unlisted: count_posts(status: "unlisted")
+      total: PhoenixKitPosts.count_posts([]),
+      drafts: PhoenixKitPosts.count_posts(status: "draft"),
+      public: PhoenixKitPosts.count_posts(status: "public"),
+      scheduled: PhoenixKitPosts.count_posts(status: "scheduled"),
+      unlisted: PhoenixKitPosts.count_posts(status: "unlisted")
     }
 
     assign(socket, :stats, stats)
@@ -370,7 +374,7 @@ defmodule PhoenixKitPosts.Web.Posts do
   end
 
   defp count_posts(opts) do
-    PhoenixKitPosts.list_posts(opts) |> length()
+    PhoenixKitPosts.count_posts(opts)
   end
 
   defp maybe_add_filter(opts, _key, "all"), do: opts

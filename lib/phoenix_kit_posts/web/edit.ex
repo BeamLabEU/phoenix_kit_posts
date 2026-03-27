@@ -41,7 +41,7 @@ defmodule PhoenixKitPosts.Web.Edit do
     socket =
       if post_uuid do
         # Editing existing post
-        case PhoenixKitPosts.get_post!(post_uuid,
+        case PhoenixKitPosts.get_post(post_uuid,
                preload: [:user, :media, :tags, :groups, :mentions]
              ) do
           nil ->
@@ -134,7 +134,9 @@ defmodule PhoenixKitPosts.Web.Edit do
   end
 
   @impl true
-  def handle_event("add_tag", %{"tag" => tag_name}, socket) do
+  def handle_event("add_tag", %{"value" => tag_name}, socket) do
+    tag_name = String.trim(tag_name)
+
     if tag_name != "" do
       current_tags = socket.assigns.selected_tags
       max_tags = String.to_integer(Settings.get_setting("posts_max_tags", "20"))
@@ -292,20 +294,16 @@ defmodule PhoenixKitPosts.Web.Edit do
         not Enum.empty?(file_uuids) && socket.assigns.inserting_media_type ->
           media_type = socket.assigns.inserting_media_type
 
-          # Build JS commands for all selected files
-          js_code =
-            file_uuids
-            |> Enum.map_join("; ", fn fid ->
-              file_url = get_file_url(fid)
-              encoded_url = Jason.encode!(file_url)
-
-              "window.postsEditorInsertMedia && window.postsEditorInsertMedia(#{encoded_url}, '#{media_type}')"
+          # Build structured media list for client-side insertion
+          media_items =
+            Enum.map(file_uuids, fn fid ->
+              %{url: get_file_url(fid), type: media_type}
             end)
 
           socket
           |> assign(:show_media_selector, false)
           |> assign(:inserting_media_type, nil)
-          |> push_event("exec-js", %{js: js_code})
+          |> push_event("insert-media", %{items: media_items})
 
         true ->
           assign(socket, :show_media_selector, false)

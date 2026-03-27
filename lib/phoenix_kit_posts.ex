@@ -129,23 +129,10 @@ defmodule PhoenixKitPosts do
     %{
       enabled: enabled?(),
       total_posts: count_posts(),
-      published_posts: count_posts_by_status("public"),
-      draft_posts: count_posts_by_status("draft"),
+      published_posts: count_posts(status: "public"),
+      draft_posts: count_posts(status: "draft"),
       likes_enabled: Settings.get_boolean_setting("posts_likes_enabled", true)
     }
-  end
-
-  defp count_posts do
-    repo().aggregate(Post, :count, :uuid)
-  rescue
-    _ -> 0
-  end
-
-  defp count_posts_by_status(status) do
-    from(p in Post, where: p.status == ^status)
-    |> repo().aggregate(:count)
-  rescue
-    _ -> 0
   end
 
   # ============================================================================
@@ -483,6 +470,8 @@ defmodule PhoenixKitPosts do
     status = Keyword.get(opts, :status)
     type = Keyword.get(opts, :type)
     search = Keyword.get(opts, :search)
+    page = Keyword.get(opts, :page)
+    per_page = Keyword.get(opts, :per_page)
     preloads = Keyword.get(opts, :preload, [])
 
     Post
@@ -491,8 +480,31 @@ defmodule PhoenixKitPosts do
     |> maybe_filter_by_type(type)
     |> maybe_search(search)
     |> order_by([p], desc: p.inserted_at)
+    |> maybe_paginate(page, per_page)
     |> repo().all()
     |> repo().preload(preloads)
+  end
+
+  @doc """
+  Counts posts matching the given filter options.
+
+  Accepts the same filter options as `list_posts/1` (`:user_uuid`, `:status`, `:type`, `:search`)
+  but ignores pagination options.
+  """
+  def count_posts(opts \\ []) do
+    user_uuid = Keyword.get(opts, :user_uuid)
+    status = Keyword.get(opts, :status)
+    type = Keyword.get(opts, :type)
+    search = Keyword.get(opts, :search)
+
+    Post
+    |> maybe_filter_by_user(user_uuid)
+    |> maybe_filter_by_status(status)
+    |> maybe_filter_by_type(type)
+    |> maybe_search(search)
+    |> repo().aggregate(:count)
+  rescue
+    _ -> 0
   end
 
   @doc """
@@ -816,6 +828,14 @@ defmodule PhoenixKitPosts do
 
   defp do_like_post(post_uuid, user_uuid) do
     repo().transaction(fn ->
+      # Remove existing dislike if present (mutual exclusion)
+      case repo().get_by(PostDislike, post_uuid: post_uuid, user_uuid: user_uuid) do
+        nil -> :ok
+        dislike ->
+          {:ok, _} = repo().delete(dislike)
+          decrement_dislike_count(%Post{uuid: post_uuid})
+      end
+
       case %PostLike{}
            |> PostLike.changeset(%{
              post_uuid: post_uuid,
@@ -901,6 +921,14 @@ defmodule PhoenixKitPosts do
 
   defp do_dislike_post(post_uuid, user_uuid) do
     repo().transaction(fn ->
+      # Remove existing like if present (mutual exclusion)
+      case repo().get_by(PostLike, post_uuid: post_uuid, user_uuid: user_uuid) do
+        nil -> :ok
+        like ->
+          {:ok, _} = repo().delete(like)
+          decrement_like_count(%Post{uuid: post_uuid})
+      end
+
       case %PostDislike{}
            |> PostDislike.changeset(%{
              post_uuid: post_uuid,
@@ -1055,13 +1083,21 @@ defmodule PhoenixKitPosts do
         |> Enum.reject(&is_nil/1)
 
       Enum.each(tags, fn tag ->
-        %PostTagAssignment{}
-        |> PostTagAssignment.changeset(%{post_uuid: post_uuid, tag_uuid: tag.uuid})
-        |> repo().insert(on_conflict: :nothing)
+        case %PostTagAssignment{}
+             |> PostTagAssignment.changeset(%{post_uuid: post_uuid, tag_uuid: tag.uuid})
+             |> repo().insert(on_conflict: :nothing) do
+          {:ok, %{uuid: nil}} ->
+            # on_conflict: :nothing returns a struct with nil PK — assignment already existed
+            :ok
 
-        # Increment tag usage
-        from(t in PostTag, where: t.uuid == ^tag.uuid)
-        |> repo().update_all(inc: [usage_count: 1])
+          {:ok, _assignment} ->
+            # New assignment — increment tag usage
+            from(t in PostTag, where: t.uuid == ^tag.uuid)
+            |> repo().update_all(inc: [usage_count: 1])
+
+          _ ->
+            :ok
+        end
       end)
 
       tags
@@ -1292,14 +1328,15 @@ defmodule PhoenixKitPosts do
   Reorders user's groups.
   """
   def reorder_groups(user_uuid, group_uuid_positions) when is_map(group_uuid_positions) do
-    repo().transaction(fn ->
-      Enum.each(group_uuid_positions, fn {group_uuid, position} ->
-        from(g in PostGroup, where: g.uuid == ^group_uuid and g.user_uuid == ^user_uuid)
-        |> repo().update_all(set: [position: position])
-      end)
-    end)
-
-    :ok
+    case repo().transaction(fn ->
+           Enum.each(group_uuid_positions, fn {group_uuid, position} ->
+             from(g in PostGroup, where: g.uuid == ^group_uuid and g.user_uuid == ^user_uuid)
+             |> repo().update_all(set: [position: position])
+           end)
+         end) do
+      {:ok, _} -> :ok
+      {:error, reason} -> {:error, reason}
+    end
   end
 
   # ============================================================================
@@ -1410,22 +1447,23 @@ defmodule PhoenixKitPosts do
   Reorders media in a post.
   """
   def reorder_media(post_uuid, file_uuid_positions) when is_map(file_uuid_positions) do
-    repo().transaction(fn ->
-      # Two-pass approach to avoid unique constraint violations on (post_id, position)
-      # Pass 1: Set all positions to negative values (temporary)
-      Enum.each(file_uuid_positions, fn {file_uuid, position} ->
-        from(m in PostMedia, where: m.post_uuid == ^post_uuid and m.file_uuid == ^file_uuid)
-        |> repo().update_all(set: [position: -position])
-      end)
+    case repo().transaction(fn ->
+           # Two-pass approach to avoid unique constraint violations on (post_id, position)
+           # Pass 1: Set all positions to negative values (temporary)
+           Enum.each(file_uuid_positions, fn {file_uuid, position} ->
+             from(m in PostMedia, where: m.post_uuid == ^post_uuid and m.file_uuid == ^file_uuid)
+             |> repo().update_all(set: [position: -position])
+           end)
 
-      # Pass 2: Set the correct positive positions
-      Enum.each(file_uuid_positions, fn {file_uuid, position} ->
-        from(m in PostMedia, where: m.post_uuid == ^post_uuid and m.file_uuid == ^file_uuid)
-        |> repo().update_all(set: [position: position])
-      end)
-    end)
-
-    :ok
+           # Pass 2: Set the correct positive positions
+           Enum.each(file_uuid_positions, fn {file_uuid, position} ->
+             from(m in PostMedia, where: m.post_uuid == ^post_uuid and m.file_uuid == ^file_uuid)
+             |> repo().update_all(set: [position: position])
+           end)
+         end) do
+      {:ok, _} -> :ok
+      {:error, reason} -> {:error, reason}
+    end
   end
 
   @doc """
@@ -1505,6 +1543,17 @@ defmodule PhoenixKitPosts do
       [p],
       ilike(p.title, ^search_pattern) or ilike(p.content, ^search_pattern)
     )
+  end
+
+  defp maybe_paginate(query, nil, _per_page), do: query
+  defp maybe_paginate(query, _page, nil), do: query
+
+  defp maybe_paginate(query, page, per_page) when is_integer(page) and is_integer(per_page) do
+    offset = (page - 1) * per_page
+
+    query
+    |> limit(^per_page)
+    |> offset(^offset)
   end
 
   # Get repository based on configuration (for tests and apps with custom repos)

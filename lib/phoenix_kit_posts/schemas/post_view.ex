@@ -109,14 +109,16 @@ defmodule PhoenixKitPosts.PostView do
   Hash an IP address for privacy.
   """
   def hash_ip(ip_address) when is_binary(ip_address) do
-    :crypto.hash(:sha256, ip_address) |> Base.encode16(case: :lower)
+    salt = Application.get_env(:phoenix_kit_posts, :hash_salt, "phoenix_kit_posts_default_salt")
+    :crypto.hash(:sha256, salt <> ip_address) |> Base.encode16(case: :lower)
   end
 
   @doc """
   Hash a user agent for privacy.
   """
   def hash_user_agent(user_agent) when is_binary(user_agent) do
-    :crypto.hash(:sha256, user_agent) |> Base.encode16(case: :lower)
+    salt = Application.get_env(:phoenix_kit_posts, :hash_salt, "phoenix_kit_posts_default_salt")
+    :crypto.hash(:sha256, salt <> user_agent) |> Base.encode16(case: :lower)
   end
 
   # Private Functions
