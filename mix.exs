@@ -31,7 +31,7 @@ defmodule PhoenixKitPosts.MixProject do
 
   def application do
     [
-      extra_applications: [:logger]
+      extra_applications: [:logger, :phoenix_kit]
     ]
   end
 
@@ -51,6 +51,9 @@ defmodule PhoenixKitPosts.MixProject do
       # PhoenixKit provides the Module behaviour and Settings API.
       {:phoenix_kit, "~> 1.7"},
       {:phoenix_kit_comments, "~> 0.1"},
+
+      # Comments module for post detail page comments section.
+      {:phoenix_kit_comments, path: "../phoenix_kit_comments"},
 
       # LiveView is needed for the admin pages.
       {:phoenix_live_view, "~> 1.1"},
