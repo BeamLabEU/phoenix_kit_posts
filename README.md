@@ -8,7 +8,7 @@ Posts module for [PhoenixKit](https://github.com/BeamLabEU/phoenix_kit) — blog
 
 - Elixir ~> 1.18
 - [PhoenixKit](https://github.com/BeamLabEU/phoenix_kit) ~> 1.7 (host application)
-- Phoenix LiveView ~> 1.0
+- Phoenix LiveView ~> 1.1
 
 ## Installation
 
