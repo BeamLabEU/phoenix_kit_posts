@@ -73,12 +73,14 @@
             <label class="label">
               <span class="label-text">Type</span>
             </label>
-            <select name="filter[type]" class="select select-bordered w-full">
-              <option value="all" selected={@filter_type == "all"}>All Types</option>
-              <option value="post" selected={@filter_type == "post"}>Post</option>
-              <option value="snippet" selected={@filter_type == "snippet"}>Snippet</option>
-              <option value="repost" selected={@filter_type == "repost"}>Repost</option>
-            </select>
+            <label class="select w-full">
+              <select name="filter[type]">
+                <option value="all" selected={@filter_type == "all"}>All Types</option>
+                <option value="post" selected={@filter_type == "post"}>Post</option>
+                <option value="snippet" selected={@filter_type == "snippet"}>Snippet</option>
+                <option value="repost" selected={@filter_type == "repost"}>Repost</option>
+              </select>
+            </label>
           </div>
 
           <%!-- Status Filter --%>
@@ -86,15 +88,17 @@
             <label class="label">
               <span class="label-text">Status</span>
             </label>
-            <select name="filter[status]" class="select select-bordered w-full">
-              <option value="all" selected={@filter_status == "all"}>All Statuses</option>
-              <option value="draft" selected={@filter_status == "draft"}>Draft</option>
-              <option value="public" selected={@filter_status == "public"}>Public</option>
-              <option value="unlisted" selected={@filter_status == "unlisted"}>Unlisted</option>
-              <option value="scheduled" selected={@filter_status == "scheduled"}>
-                Scheduled
-              </option>
-            </select>
+            <label class="select w-full">
+              <select name="filter[status]">
+                <option value="all" selected={@filter_status == "all"}>All Statuses</option>
+                <option value="draft" selected={@filter_status == "draft"}>Draft</option>
+                <option value="public" selected={@filter_status == "public"}>Public</option>
+                <option value="unlisted" selected={@filter_status == "unlisted"}>Unlisted</option>
+                <option value="scheduled" selected={@filter_status == "scheduled"}>
+                  Scheduled
+                </option>
+              </select>
+            </label>
           </div>
 
           <%!-- Group Filter --%>
@@ -102,14 +106,16 @@
             <label class="label">
               <span class="label-text">Group</span>
             </label>
-            <select name="filter[group]" class="select select-bordered w-full">
-              <option value="all" selected={@filter_group == "all"}>All Groups</option>
-              <%= for group <- @groups do %>
-                <option value={group.uuid} selected={@filter_group == group.uuid}>
-                  {group.name}
-                </option>
-              <% end %>
-            </select>
+            <label class="select w-full">
+              <select name="filter[group]">
+                <option value="all" selected={@filter_group == "all"}>All Groups</option>
+                <%= for group <- @groups do %>
+                  <option value={group.uuid} selected={@filter_group == group.uuid}>
+                    {group.name}
+                  </option>
+                <% end %>
+              </select>
+            </label>
           </div>
 
           <%!-- Tag Filter --%>
@@ -117,10 +123,12 @@
             <label class="label">
               <span class="label-text">Tag</span>
             </label>
-            <select name="filter[tag]" class="select select-bordered w-full">
-              <option value="all" selected={@filter_tag == "all"}>All Tags</option>
-              <%!-- TODO: Add dynamic tags --%>
-            </select>
+            <label class="select w-full">
+              <select name="filter[tag]">
+                <option value="all" selected={@filter_tag == "all"}>All Tags</option>
+                <%!-- TODO: Add dynamic tags --%>
+              </select>
+            </label>
           </div>
         </div>
 
