@@ -175,20 +175,21 @@
                 <label class="label">
                   <span class="label-text font-medium">Default Post Status</span>
                 </label>
-                <select
-                  name="settings[posts_default_status]"
-                  class="select focus:select-primary w-full max-w-xs"
-                >
-                  <option value="draft" selected={@posts_default_status == "draft"}>
-                    Draft
-                  </option>
-                  <option value="public" selected={@posts_default_status == "public"}>
-                    Public
-                  </option>
-                  <option value="unlisted" selected={@posts_default_status == "unlisted"}>
-                    Unlisted
-                  </option>
-                </select>
+                <label class="select focus:select-primary w-full max-w-xs">
+                  <select
+                    name="settings[posts_default_status]"
+                  >
+                    <option value="draft" selected={@posts_default_status == "draft"}>
+                      Draft
+                    </option>
+                    <option value="public" selected={@posts_default_status == "public"}>
+                      Public
+                    </option>
+                    <option value="unlisted" selected={@posts_default_status == "unlisted"}>
+                      Unlisted
+                    </option>
+                  </select>
+                </label>
                 <label class="label">
                   <span class="label-text-alt text-base-content/70">
                     Default visibility status for new posts
