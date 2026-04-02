@@ -15,12 +15,6 @@ Posts module for [PhoenixKit](https://github.com/BeamLabEU/phoenix_kit) — blog
 Add to your parent PhoenixKit app's `mix.exs`:
 
 ```elixir
-{:phoenix_kit_posts, path: "../phoenix_kit_posts"}
-```
-
-Or from Hex:
-
-```elixir
 {:phoenix_kit_posts, "~> 0.1.0"}
 ```
 

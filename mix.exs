@@ -1,7 +1,7 @@
 defmodule PhoenixKitPosts.MixProject do
   use Mix.Project
 
-  @version "0.1.0"
+  @version "0.1.1"
   @source_url "https://github.com/BeamLabEU/phoenix_kit_posts"
 
   def project do
@@ -50,10 +50,8 @@ defmodule PhoenixKitPosts.MixProject do
     [
       # PhoenixKit provides the Module behaviour and Settings API.
       {:phoenix_kit, "~> 1.7"},
-      {:phoenix_kit_comments, "~> 0.1"},
-
       # Comments module for post detail page comments section.
-      {:phoenix_kit_comments, path: "../phoenix_kit_comments"},
+      {:phoenix_kit_comments, "~> 0.1"},
 
       # LiveView is needed for the admin pages.
       {:phoenix_live_view, "~> 1.1"},

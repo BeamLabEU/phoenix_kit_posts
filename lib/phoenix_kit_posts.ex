@@ -146,7 +146,7 @@ defmodule PhoenixKitPosts do
   def module_name, do: "Posts"
 
   @impl PhoenixKit.Module
-  def version, do: "0.1.0"
+  def version, do: "0.1.1"
 
   @impl PhoenixKit.Module
   def permission_metadata do
@@ -270,7 +270,7 @@ defmodule PhoenixKitPosts do
   end
 
   @impl PhoenixKit.Module
-  def css_sources, do: [:phoenix_kit_posts]
+  def css_sources, do: ["phoenix_kit_posts"]
 
   # ============================================================================
   # CRUD Operations

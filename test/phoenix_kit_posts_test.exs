@@ -121,7 +121,7 @@ defmodule PhoenixKitPostsTest do
     test "returns a version string" do
       version = PhoenixKitPosts.version()
       assert is_binary(version)
-      assert version == "0.1.0"
+      assert version == "0.1.1"
     end
   end
 
