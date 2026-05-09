@@ -29,14 +29,16 @@ defmodule PhoenixKitPosts.Web.GroupEdit do
   alias PhoenixKit.Utils.Routes
 
   @impl true
-  def mount(params, _session, socket) do
-    current_user = socket.assigns[:phoenix_kit_current_user]
-    project_title = Settings.get_project_title()
-    allow_groups = Settings.get_setting("posts_allow_groups", "true") == "true"
+  def mount(_params, _session, socket) do
+    if Settings.get_boolean_setting("posts_allow_groups", true) do
+      socket =
+        socket
+        |> assign(:page_title, "Group")
+        |> assign(:project_title, Settings.get_project_title())
+        |> assign(:current_user, socket.assigns[:phoenix_kit_current_user])
+        |> assign(:group, nil)
+        |> assign(:form, nil)
 
-    if allow_groups do
-      group_uuid = Map.get(params, "id")
-      socket = load_group_form(socket, group_uuid, current_user, project_title)
       {:ok, socket}
     else
       {:ok,
@@ -44,6 +46,19 @@ defmodule PhoenixKitPosts.Web.GroupEdit do
        |> put_flash(:error, "Groups feature is not enabled")
        |> push_navigate(to: Routes.path("/admin/posts"))}
     end
+  end
+
+  @impl true
+  def handle_params(params, _uri, socket) do
+    group_uuid = Map.get(params, "id")
+
+    {:noreply,
+     load_group_form(
+       socket,
+       group_uuid,
+       socket.assigns.current_user,
+       socket.assigns.project_title
+     )}
   end
 
   defp load_group_form(socket, nil, current_user, project_title) do

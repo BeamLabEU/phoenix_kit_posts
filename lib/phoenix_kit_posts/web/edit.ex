@@ -28,80 +28,75 @@ defmodule PhoenixKitPosts.Web.Edit do
   alias PhoenixKit.Utils.Routes
 
   @impl true
-  def mount(params, _session, socket) do
-    # Get current user
-    current_user = socket.assigns[:phoenix_kit_current_user]
-
-    # Get project title
-    project_title = Settings.get_project_title()
-
-    # Determine if this is a new post or editing existing
-    post_uuid = Map.get(params, "id")
-
+  def mount(_params, _session, socket) do
     socket =
-      if post_uuid do
-        # Editing existing post
-        case PhoenixKitPosts.get_post(post_uuid,
-               preload: [:user, :media, :tags, :groups, :mentions]
-             ) do
-          nil ->
-            socket
-            |> put_flash(:error, "Post not found")
-            |> push_navigate(to: Routes.path("/admin/posts"))
-
-          post ->
-            # Check if user owns this post or is admin
-            if can_edit_post?(current_user, post) do
-              content = post.content || ""
-
-              form_data = %{
-                "title" => post.title || "",
-                "sub_title" => post.sub_title || "",
-                "type" => post.type || "post",
-                "status" => post.status || "draft",
-                "slug" => post.slug || "",
-                "scheduled_at" => format_datetime_local(post.scheduled_at, current_user)
-              }
-
-              form = Component.to_form(form_data, as: :post)
-
-              socket
-              |> assign(:page_title, "Edit Post")
-              |> assign(:project_title, project_title)
-              |> assign(:post, post)
-              |> assign(:form, form)
-              |> assign(:content, content)
-              |> assign(:current_user, current_user)
-              |> load_form_data()
-            else
-              socket
-              |> put_flash(:error, "You don't have permission to edit this post")
-              |> push_navigate(to: Routes.path("/admin/posts"))
-            end
-        end
-      else
-        # Creating new post
-        form_data = %{
-          "title" => "",
-          "sub_title" => "",
-          "type" => "post",
-          "status" => Settings.get_setting("posts_default_status", "draft"),
-          "slug" => ""
-        }
-
-        form = Component.to_form(form_data, as: :post)
-
-        socket
-        |> assign(:page_title, "New Post")
-        |> assign(:project_title, project_title)
-        |> assign(:post, %{uuid: nil, user_uuid: current_user.uuid})
-        |> assign(:form, form)
-        |> assign(:content, "")
-        |> assign(:current_user, current_user)
-        |> load_form_data()
-      end
+      socket
+      |> assign(:page_title, "Post")
+      |> assign(:project_title, Settings.get_project_title())
+      |> assign(:current_user, socket.assigns[:phoenix_kit_current_user])
+      |> assign(:post, nil)
+      |> assign(:form, nil)
+      |> assign(:content, "")
 
     {:ok, socket}
+  end
+
+  @impl true
+  def handle_params(%{"id" => post_uuid}, _uri, socket) do
+    current_user = socket.assigns.current_user
+
+    case PhoenixKitPosts.get_post(post_uuid, preload: [:user, :media, :tags, :groups, :mentions]) do
+      nil ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Post not found")
+         |> push_navigate(to: Routes.path("/admin/posts"))}
+
+      post ->
+        if can_edit_post?(current_user, post) do
+          form_data = %{
+            "title" => post.title || "",
+            "sub_title" => post.sub_title || "",
+            "type" => post.type || "post",
+            "status" => post.status || "draft",
+            "slug" => post.slug || "",
+            "scheduled_at" => format_datetime_local(post.scheduled_at, current_user)
+          }
+
+          {:noreply,
+           socket
+           |> assign(:page_title, "Edit Post")
+           |> assign(:post, post)
+           |> assign(:form, Component.to_form(form_data, as: :post))
+           |> assign(:content, post.content || "")
+           |> load_form_data()}
+        else
+          {:noreply,
+           socket
+           |> put_flash(:error, "You don't have permission to edit this post")
+           |> push_navigate(to: Routes.path("/admin/posts"))}
+        end
+    end
+  end
+
+  def handle_params(_params, _uri, socket) do
+    current_user = socket.assigns.current_user
+
+    form_data = %{
+      "title" => "",
+      "sub_title" => "",
+      "type" => "post",
+      "status" => Settings.get_setting("posts_default_status", "draft"),
+      "slug" => ""
+    }
+
+    {:noreply,
+     socket
+     |> assign(:page_title, "New Post")
+     |> assign(:post, %{uuid: nil, user_uuid: current_user.uuid})
+     |> assign(:form, Component.to_form(form_data, as: :post))
+     |> assign(:content, "")
+     |> load_form_data()}
   end
 
   @impl true
@@ -525,9 +520,9 @@ defmodule PhoenixKitPosts.Web.Edit do
 
     max_tags = String.to_integer(Settings.get_setting("posts_max_tags", "20"))
     default_status = Settings.get_setting("posts_default_status", "draft")
-    allow_scheduling = Settings.get_setting("posts_allow_scheduling", "true") == "true"
-    allow_groups = Settings.get_setting("posts_allow_groups", "true") == "true"
-    seo_auto_slug = Settings.get_setting("posts_seo_auto_slug", "true") == "true"
+    allow_scheduling = Settings.get_boolean_setting("posts_allow_scheduling", true)
+    allow_groups = Settings.get_boolean_setting("posts_allow_groups", true)
+    seo_auto_slug = Settings.get_boolean_setting("posts_seo_auto_slug", true)
 
     socket
     |> assign(:user_groups, user_groups)

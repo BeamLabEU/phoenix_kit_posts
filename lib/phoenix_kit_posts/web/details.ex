@@ -27,49 +27,48 @@ defmodule PhoenixKitPosts.Web.Details do
   alias PhoenixKit.Users.Roles
   alias PhoenixKit.Utils.Routes
 
+  @post_preloads [:user, [media: :file], :tags, :groups, :mentions]
+
   @impl true
-  def mount(%{"id" => post_uuid}, _session, socket) do
-    # Get current user
-    current_user = socket.assigns[:phoenix_kit_current_user]
+  def mount(_params, _session, socket) do
+    socket =
+      socket
+      |> assign(:page_title, "Post")
+      |> assign(:project_title, Settings.get_project_title())
+      |> assign(:current_user, socket.assigns[:phoenix_kit_current_user])
+      |> assign(:post, nil)
+      |> assign(:rendered_content, "")
+      |> assign(:liked_by_user, false)
+      |> assign(:comments_enabled, PhoenixKitComments.enabled?())
+      |> assign(:likes_enabled, Settings.get_boolean_setting("posts_likes_enabled", true))
+      |> assign(:show_view_count, Settings.get_boolean_setting("posts_show_view_count", true))
+      |> assign(:loading, true)
 
-    # Get project title
-    project_title = Settings.get_project_title()
+    {:ok, socket}
+  end
 
-    # Load post with all associations
-    case PhoenixKitPosts.get_post(post_uuid,
-           preload: [:user, [media: :file], :tags, :groups, :mentions]
-         ) do
+  @impl true
+  def handle_params(%{"id" => post_uuid}, _uri, socket) do
+    case PhoenixKitPosts.get_post(post_uuid, preload: @post_preloads) do
       nil ->
-        {:ok,
+        {:noreply,
          socket
          |> put_flash(:error, "Post not found")
          |> push_navigate(to: Routes.path("/admin/posts"))}
 
       post ->
-        # Increment view count (only on connected mount to avoid double-counting)
         if connected?(socket), do: PhoenixKitPosts.increment_view_count(post)
 
-        # Check if current user liked this post
-        liked_by_user = PhoenixKitPosts.post_liked_by?(post.uuid, current_user.uuid)
+        liked_by_user =
+          PhoenixKitPosts.post_liked_by?(post.uuid, socket.assigns.current_user.uuid)
 
-        # Load settings
-        comments_enabled = PhoenixKitComments.enabled?()
-        likes_enabled = Settings.get_setting("posts_likes_enabled", "true") == "true"
-        show_view_count = Settings.get_setting("posts_show_view_count", "true") == "true"
-
-        socket =
-          socket
-          |> assign(:page_title, post.title)
-          |> assign(:project_title, project_title)
-          |> assign(:post, post)
-          |> assign(:rendered_content, render_markdown_content(post.content))
-          |> assign(:current_user, current_user)
-          |> assign(:liked_by_user, liked_by_user)
-          |> assign(:comments_enabled, comments_enabled)
-          |> assign(:likes_enabled, likes_enabled)
-          |> assign(:show_view_count, show_view_count)
-
-        {:ok, socket}
+        {:noreply,
+         socket
+         |> assign(:page_title, post.title)
+         |> assign(:post, post)
+         |> assign(:rendered_content, render_markdown_content(post.content))
+         |> assign(:liked_by_user, liked_by_user)
+         |> assign(:loading, false)}
     end
   end
 
@@ -84,7 +83,7 @@ defmodule PhoenixKitPosts.Web.Details do
 
       updated_post =
         PhoenixKitPosts.get_post!(post.uuid,
-          preload: [:user, [media: :file], :tags, :groups, :mentions]
+          preload: @post_preloads
         )
 
       {:noreply,
@@ -97,7 +96,7 @@ defmodule PhoenixKitPosts.Web.Details do
 
       updated_post =
         PhoenixKitPosts.get_post!(post.uuid,
-          preload: [:user, [media: :file], :tags, :groups, :mentions]
+          preload: @post_preloads
         )
 
       {:noreply,
@@ -146,7 +145,7 @@ defmodule PhoenixKitPosts.Web.Details do
   def handle_info({:comments_updated, _info}, socket) do
     updated_post =
       PhoenixKitPosts.get_post!(socket.assigns.post.uuid,
-        preload: [:user, [media: :file], :tags, :groups, :mentions]
+        preload: @post_preloads
       )
 
     {:noreply, assign(socket, :post, updated_post)}

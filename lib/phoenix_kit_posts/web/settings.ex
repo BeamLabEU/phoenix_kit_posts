@@ -34,18 +34,17 @@ defmodule PhoenixKitPosts.Web.Settings do
   alias PhoenixKit.Settings
 
   def mount(_params, _session, socket) do
-    # Get project title from settings
-    project_title = Settings.get_project_title()
-
-    # Load all posts settings
     socket =
       socket
       |> assign(:page_title, "Posts Settings")
-      |> assign(:project_title, project_title)
+      |> assign(:project_title, Settings.get_project_title())
       |> assign(:saving, false)
-      |> load_settings()
 
     {:ok, socket}
+  end
+
+  def handle_params(_params, _uri, socket) do
+    {:noreply, load_settings(socket)}
   end
 
   def handle_event("save", params, socket) do

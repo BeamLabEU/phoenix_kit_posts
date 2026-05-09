@@ -145,8 +145,9 @@ defmodule PhoenixKitPosts do
   @impl PhoenixKit.Module
   def module_name, do: "Posts"
 
+  @version Mix.Project.config()[:version]
   @impl PhoenixKit.Module
-  def version, do: "0.1.2"
+  def version, do: @version
 
   @impl PhoenixKit.Module
   def permission_metadata do

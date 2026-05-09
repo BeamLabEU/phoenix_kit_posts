@@ -118,10 +118,10 @@ defmodule PhoenixKitPostsTest do
   end
 
   describe "version/0" do
-    test "returns a version string" do
+    test "returns a version string matching mix.exs" do
       version = PhoenixKitPosts.version()
       assert is_binary(version)
-      assert version == "0.1.2"
+      assert version == Mix.Project.config()[:version]
     end
   end
 

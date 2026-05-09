@@ -30,25 +30,15 @@ defmodule PhoenixKitPosts.Web.Groups do
 
   @impl true
   def mount(_params, _session, socket) do
-    # Get current user
-    current_user = socket.assigns[:phoenix_kit_current_user]
-
-    # Get project title
-    project_title = Settings.get_project_title()
-
-    # Check if groups are enabled
-    allow_groups = Settings.get_setting("posts_allow_groups", "true") == "true"
-
-    if allow_groups do
+    if Settings.get_boolean_setting("posts_allow_groups", true) do
       socket =
         socket
         |> assign(:page_title, "Post Groups")
-        |> assign(:project_title, project_title)
-        |> assign(:current_user, current_user)
+        |> assign(:project_title, Settings.get_project_title())
+        |> assign(:current_user, socket.assigns[:phoenix_kit_current_user])
         |> assign(:groups, [])
         |> assign(:search_query, "")
         |> assign(:loading, true)
-        |> load_groups()
 
       {:ok, socket}
     else
@@ -57,6 +47,11 @@ defmodule PhoenixKitPosts.Web.Groups do
        |> put_flash(:error, "Groups feature is not enabled")
        |> push_navigate(to: Routes.path("/admin/posts"))}
     end
+  end
+
+  @impl true
+  def handle_params(_params, _uri, socket) do
+    {:noreply, load_groups(socket)}
   end
 
   @impl true
