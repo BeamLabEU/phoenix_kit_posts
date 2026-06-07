@@ -51,7 +51,7 @@ defmodule PhoenixKitPosts.MixProject do
       # PhoenixKit provides the Module behaviour and Settings API.
       {:phoenix_kit, "~> 1.7"},
       # Comments module for post detail page comments section.
-      {:phoenix_kit_comments, "~> 0.1"},
+      {:phoenix_kit_comments, "~> 0.2"},
 
       # LiveView is needed for the admin pages.
       {:phoenix_live_view, "~> 1.1"},
