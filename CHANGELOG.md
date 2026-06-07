@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.4 - 2026-06-07
+
+### Fixed
+- Fix post comments silently posting empty content — the comment composer's Leaf rich-text editor reports its content to the host LiveView via a `{:leaf_changed, …}` process message, which `Details` never forwarded into `CommentsComponent.forward_leaf_event/2`, so "Post Comment" no-opped (PR #7). Now wired via the dependency's `use PhoenixKitComments.Embed` helper (a `:handle_info` lifecycle hook), which also drops the per-keystroke `Code.ensure_loaded` and the silent catch-all `handle_info/2` the initial fix introduced.
+- Move LiveView DB queries from `mount/3` to `handle_params/3` across the post/group LiveViews — `mount/3` runs twice (HTTP + WebSocket), so querying there duplicated every read.
+
+### Changed
+- Require `phoenix_kit_comments ~> 0.2` (was `~> 0.1`) — `PhoenixKitComments.Embed` only exists in the 0.2.x line (resolved: 0.2.6).
+- Upgrade dependencies: phoenix_kit 1.7.132, phoenix 1.8.7, ecto/ecto_sql 3.14, leaf 0.2.21, phoenix_live_view 1.1.31, earmark 1.4.49.
+- Internal refactors: replace `Settings.get_setting(_, "true") == "true"` with `Settings.get_boolean_setting/2`; extract the post preload list to a `@post_preloads` module attribute.
+
 ## 0.1.3 - 2026-04-29
 
 ### Fixed
