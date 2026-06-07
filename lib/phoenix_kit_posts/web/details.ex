@@ -151,6 +151,25 @@ defmodule PhoenixKitPosts.Web.Details do
     {:noreply, assign(socket, :post, updated_post)}
   end
 
+  # The CommentsComponent composer's Leaf editor reports its content via a
+  # {:leaf_changed, ...} process message to this host LV; forward it to the
+  # component or "Post Comment" silently no-ops (content never reaches it).
+  # Runtime-resolved so it stays a safe no-op if comments is unavailable.
+  def handle_info({:leaf_changed, _} = msg, socket) do
+    case Code.ensure_loaded(PhoenixKitComments.Web.CommentsComponent) do
+      {:module, mod} ->
+        case mod.forward_leaf_event(msg, socket) do
+          {:noreply, socket} -> {:noreply, socket}
+          _ -> {:noreply, socket}
+        end
+
+      _ ->
+        {:noreply, socket}
+    end
+  end
+
+  def handle_info(_msg, socket), do: {:noreply, socket}
+
   ## --- Private Helper Functions ---
 
   defp user_is_admin?(user) do
