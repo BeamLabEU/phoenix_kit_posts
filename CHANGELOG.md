@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.5 - 2026-06-08
+
+### Changed
+- Post editor now uses the shared `PhoenixKitWeb.Components.MediaGallery` for post images instead of a hand-rolled grid — the picker, drag-reorder, featured badge and lightbox all come from one canonical component (PR #9). The post-content Leaf editor also defaults to hybrid mode (was pinned to visual).
+- Reframe Posts as the social/community posts module (user posts, threaded comments, boards, likes, mentions) rather than a blog/CMS — long-form publishing is handled by PhoenixKit's built-in Publishing module. Updated README, hex description, AGENTS.md and the admin-panel module description (PR #9).
+- Upgrade dependencies: phoenix_kit 1.7.133, req 0.6.1.
+
+### Fixed
+- Removing an image from an existing post now actually detaches it — the `MediaGallery` `{:changed, …}` handler was calling `detach_media_by_uuid/1` (a PostMedia primary-key lookup) with a *file* uuid, so removals silently no-opped.
+- Removing the featured (position 1) image no longer drops the post's featured image — media positions are renumbered to a contiguous `1..n` on every selection change, so `get_featured_image/1` (which matches `position == 1`) keeps resolving.
+- Restore the `posts_max_media` cap in the post editor (wired through `MediaGallery`'s `max_count`).
+
 ## 0.1.4 - 2026-06-07
 
 ### Fixed
