@@ -152,68 +152,12 @@ defmodule PhoenixKitPosts.Web.Edit do
     {:noreply, assign(socket, :selected_tags, current_tags)}
   end
 
-  @impl true
-  def handle_event("open_featured_image_selector", _params, socket) do
-    {:noreply,
-     socket
-     |> assign(:show_media_selector, true)
-     |> assign(:selecting_featured_image, true)
-     |> assign(:media_selector_mode, :multiple)}
-  end
-
-  @impl true
-  def handle_event("remove_post_image", %{"id" => media_uuid}, socket) do
-    post_uuid = Map.get(socket.assigns.post, :uuid)
-
-    if post_uuid do
-      # Existing post - remove from database
-      PhoenixKitPosts.detach_media_by_uuid(media_uuid)
-      post_images = PhoenixKitPosts.list_post_media(post_uuid, preload: [:file])
-      {:noreply, assign(socket, :post_images, post_images)}
-    else
-      # New post - remove from temporary list
-      post_images =
-        Enum.reject(socket.assigns.post_images, fn img ->
-          to_string(img.file_uuid) == media_uuid || to_string(img[:uuid]) == media_uuid
-        end)
-
-      pending_ids = Enum.reject(socket.assigns[:pending_image_uuids] || [], &(&1 == media_uuid))
-
-      {:noreply,
-       socket |> assign(:post_images, post_images) |> assign(:pending_image_uuids, pending_ids)}
-    end
-  end
-
-  @impl true
-  def handle_event("reorder_post_images", %{"ordered_ids" => ordered_ids}, socket) do
-    post_uuid = Map.get(socket.assigns.post, :uuid)
-
-    if post_uuid do
-      # Existing post - update positions in database
-      positions =
-        ordered_ids
-        |> Enum.with_index(1)
-        |> Map.new(fn {file_uuid, position} -> {file_uuid, position} end)
-
-      PhoenixKitPosts.reorder_media(post_uuid, positions)
-
-      # Reload images to reflect new order
-      post_images = PhoenixKitPosts.list_post_media(post_uuid, preload: [:file])
-      {:noreply, assign(socket, :post_images, post_images)}
-    else
-      # New post - reorder in memory
-      reordered =
-        ordered_ids
-        |> Enum.with_index(1)
-        |> Enum.map(fn {file_uuid, position} ->
-          img = Enum.find(socket.assigns.post_images, &(to_string(&1.file_uuid) == file_uuid))
-          %{img | position: position}
-        end)
-        |> Enum.reject(&is_nil/1)
-
-      {:noreply, assign(socket, :post_images, reordered)}
-    end
-  end
+  # Post-image picker / remove / drag-reorder are delegated to
+  # PhoenixKitWeb.Components.MediaGallery (see edit.html.heex). The gallery
+  # owns its embedded picker + SortableGrid; we react to the single
+  # `{MediaGallery, "post-images-gallery", {:changed, uuids}}` message it
+  # emits (handle_info clause below) and sync the new ordering to post_media
+  # DB rows (existing post) or the in-memory pending list (unsaved post).
 
   # Handle content changes from MarkdownEditor/Leaf component
   @impl true
@@ -230,78 +174,28 @@ defmodule PhoenixKitPosts.Web.Edit do
     do_insert_component(socket, type)
   end
 
-  # Handle media selection from MediaSelectorModal
+  # Media selection from the Leaf editor's MediaSelectorModal. Post-image
+  # selection no longer routes through here — MediaGallery owns that picker
+  # and reports via `{:changed, …}`. This handles only content image/video
+  # insertion into the post body.
   def handle_info({:media_selected, file_uuids}, socket) do
     socket =
-      cond do
-        # Post images selection (supports multiple files)
-        not Enum.empty?(file_uuids) && socket.assigns.selecting_featured_image ->
-          post_uuid = Map.get(socket.assigns.post, :uuid)
-
-          if post_uuid do
-            # Existing post - save all selected images to database
-            # Get current max position
-            current_images = socket.assigns.post_images
-
-            max_position =
-              Enum.reduce(current_images, 0, fn img, acc -> max(acc, img.position) end)
-
-            # Add new images with incremental positions
-            file_uuids
-            |> Enum.with_index(max_position + 1)
-            |> Enum.each(fn {file_uuid, position} ->
-              PhoenixKitPosts.attach_media(post_uuid, file_uuid, position: position)
-            end)
-
-            # Reload all images
-            post_images = PhoenixKitPosts.list_post_media(post_uuid, preload: [:file])
-
-            socket
-            |> assign(:post_images, post_images)
-            |> assign(:show_media_selector, false)
-            |> assign(:selecting_featured_image, false)
-          else
-            # New post - store file_uuids temporarily until post is saved
-            # Create temporary structs for display
-            current_images = socket.assigns[:post_images] || []
-
-            max_position =
-              Enum.reduce(current_images, 0, fn img, acc -> max(acc, img.position) end)
-
-            new_images =
-              file_uuids
-              |> Enum.with_index(max_position + 1)
-              |> Enum.map(fn {file_uuid, position} ->
-                %{file_uuid: file_uuid, file: nil, position: position, id: nil}
-              end)
-
-            socket
-            |> assign(:post_images, current_images ++ new_images)
-            |> assign(
-              :pending_image_uuids,
-              (socket.assigns[:pending_image_uuids] || []) ++ file_uuids
-            )
-            |> assign(:show_media_selector, false)
-            |> assign(:selecting_featured_image, false)
-          end
-
+      if not Enum.empty?(file_uuids) && socket.assigns.inserting_media_type do
         # Content image insertion (supports multiple files)
-        not Enum.empty?(file_uuids) && socket.assigns.inserting_media_type ->
-          media_type = socket.assigns.inserting_media_type
+        media_type = socket.assigns.inserting_media_type
 
-          # Build structured media list for client-side insertion
-          media_items =
-            Enum.map(file_uuids, fn fid ->
-              %{url: get_file_url(fid), type: media_type}
-            end)
+        # Build structured media list for client-side insertion
+        media_items =
+          Enum.map(file_uuids, fn fid ->
+            %{url: get_file_url(fid), type: media_type}
+          end)
 
-          socket
-          |> assign(:show_media_selector, false)
-          |> assign(:inserting_media_type, nil)
-          |> push_event("insert-media", %{items: media_items})
-
-        true ->
-          assign(socket, :show_media_selector, false)
+        socket
+        |> assign(:show_media_selector, false)
+        |> assign(:inserting_media_type, nil)
+        |> push_event("insert-media", %{items: media_items})
+      else
+        assign(socket, :show_media_selector, false)
       end
 
     {:noreply, socket}
@@ -312,8 +206,67 @@ defmodule PhoenixKitPosts.Web.Edit do
     {:noreply,
      socket
      |> assign(:show_media_selector, false)
-     |> assign(:inserting_media_type, nil)
-     |> assign(:selecting_featured_image, false)}
+     |> assign(:inserting_media_type, nil)}
+  end
+
+  # MediaGallery (post images) emits this when the user picks / removes /
+  # reorders. Diff against the current `post_images` and apply to either the
+  # DB (existing post) or the in-memory pending list (new post, where
+  # `pending_image_uuids` is consumed in the save path).
+  def handle_info(
+        {PhoenixKitWeb.Components.MediaGallery, "post-images-gallery", {:changed, new_uuids}},
+        socket
+      ) do
+    post_uuid = Map.get(socket.assigns.post, :uuid)
+    current_images = socket.assigns[:post_images] || []
+    current_uuids = Enum.map(current_images, &to_string(&1.file_uuid))
+
+    added = new_uuids -- current_uuids
+    removed = current_uuids -- new_uuids
+    reordered? = MapSet.new(new_uuids) == MapSet.new(current_uuids) and new_uuids != current_uuids
+
+    if post_uuid do
+      # Existing post — apply diff to DB rows, then reload.
+      Enum.each(removed, &PhoenixKitPosts.detach_media_by_uuid/1)
+
+      max_position =
+        Enum.reduce(current_images, 0, fn img, acc -> max(acc, img.position) end)
+
+      added
+      |> Enum.with_index(max_position + 1)
+      |> Enum.each(fn {file_uuid, position} ->
+        PhoenixKitPosts.attach_media(post_uuid, file_uuid, position: position)
+      end)
+
+      if reordered? or added != [] do
+        positions =
+          new_uuids
+          |> Enum.with_index(1)
+          |> Map.new(fn {file_uuid, position} -> {file_uuid, position} end)
+
+        PhoenixKitPosts.reorder_media(post_uuid, positions)
+      end
+
+      post_images = PhoenixKitPosts.list_post_media(post_uuid, preload: [:file])
+      {:noreply, assign(socket, :post_images, post_images)}
+    else
+      # New post — sync in-memory list + pending_image_uuids (consumed in
+      # the save path when the post is created).
+      new_images =
+        new_uuids
+        |> Enum.with_index(1)
+        |> Enum.map(fn {file_uuid, position} ->
+          case Enum.find(current_images, &(to_string(&1.file_uuid) == file_uuid)) do
+            nil -> %{file_uuid: file_uuid, file: nil, position: position, id: nil}
+            existing -> %{existing | position: position}
+          end
+        end)
+
+      {:noreply,
+       socket
+       |> assign(:post_images, new_images)
+       |> assign(:pending_image_uuids, new_uuids)}
+    end
   end
 
   # Handle Leaf editor messages
@@ -539,7 +492,6 @@ defmodule PhoenixKitPosts.Web.Edit do
     |> assign(:seo_auto_slug, seo_auto_slug)
     |> assign(:show_media_selector, false)
     |> assign(:inserting_media_type, nil)
-    |> assign(:selecting_featured_image, false)
     |> assign(:media_selector_mode, :single)
     |> load_post_images()
   end
