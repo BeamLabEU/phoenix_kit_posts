@@ -223,11 +223,12 @@ defmodule PhoenixKitPosts.Web.Edit do
 
     added = new_uuids -- current_uuids
     removed = current_uuids -- new_uuids
-    reordered? = MapSet.new(new_uuids) == MapSet.new(current_uuids) and new_uuids != current_uuids
 
     if post_uuid do
-      # Existing post — apply diff to DB rows, then reload.
-      Enum.each(removed, &PhoenixKitPosts.detach_media_by_uuid/1)
+      # Existing post — apply diff to DB rows, then reload. `removed`/`added`
+      # carry *file* uuids, so detach via (post_uuid, file_uuid) — not
+      # detach_media_by_uuid/1, which looks up by the PostMedia primary key.
+      Enum.each(removed, &PhoenixKitPosts.detach_media(post_uuid, &1))
 
       max_position =
         Enum.reduce(current_images, 0, fn img, acc -> max(acc, img.position) end)
@@ -238,7 +239,10 @@ defmodule PhoenixKitPosts.Web.Edit do
         PhoenixKitPosts.attach_media(post_uuid, file_uuid, position: position)
       end)
 
-      if reordered? or added != [] do
+      # Renumber to a contiguous 1..n matching the gallery's order whenever the
+      # selection changed. Keeps `position == 1` pointing at the featured image
+      # (see get_featured_image/1) even after removals, and applies reorders.
+      if new_uuids != current_uuids do
         positions =
           new_uuids
           |> Enum.with_index(1)
@@ -304,19 +308,6 @@ defmodule PhoenixKitPosts.Web.Edit do
     # Use "original" variant for the full-size image
     URLSigner.signed_url(file_uuid, "original")
   end
-
-  # Get URL for featured image (used in template)
-  def get_featured_image_url(nil), do: nil
-
-  def get_featured_image_url(%{file: %{uuid: file_uuid}}) when not is_nil(file_uuid) do
-    get_file_url(file_uuid)
-  end
-
-  def get_featured_image_url(%{file_uuid: file_uuid}) when not is_nil(file_uuid) do
-    get_file_url(file_uuid)
-  end
-
-  def get_featured_image_url(_), do: nil
 
   defp save_post(socket, nil, post_params, tags) do
     # Convert scheduled_at from user's local time to UTC
