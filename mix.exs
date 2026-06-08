@@ -16,7 +16,7 @@ defmodule PhoenixKitPosts.MixProject do
 
       # Hex
       description:
-        "Posts module for PhoenixKit — blog posts, tags, groups, likes, media, and scheduling",
+        "Social posts module for PhoenixKit — user posts, threaded comments, tags, boards, likes/dislikes, media, mentions, and scheduling",
       package: package(),
 
       # Dialyzer

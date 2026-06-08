@@ -61,72 +61,25 @@
                   />
                 </div>
 
-                <%!-- Media --%>
+                <%!-- Media — delegated to the canonical PhoenixKit gallery.
+                     Picker + drag-reorder + featured badge + lightbox are all
+                     handled inside the component; the parent only reacts to the
+                     {MediaGallery, id, {:changed, uuids}} message it emits. --%>
                 <div class="form-control">
                   <label class="label">
                     <span class="label-text font-medium">Media</span>
                     <span class="label-text-alt">{length(@post_images)}</span>
                   </label>
 
-                  <%= if @post_images == [] do %>
-                    <%!-- Full-width add button when empty --%>
-                    <button
-                      type="button"
-                      phx-click="open_featured_image_selector"
-                      class="w-full h-32 border-2 border-dashed border-base-300 rounded-lg hover:border-primary hover:bg-base-200 transition-all cursor-pointer flex flex-col items-center justify-center gap-2 text-base-content/60 hover:text-primary"
-                    >
-                      <.icon name="hero-photo" class="w-8 h-8" />
-                      <span class="text-sm font-medium">Add Media</span>
-                    </button>
-                  <% else %>
-                    <.draggable_list
-                      id="post-images-grid"
-                      items={@post_images}
-                      item_id={fn media -> media.file_uuid end}
-                      on_reorder="reorder_post_images"
-                      cols={4}
-                    >
-                      <:item :let={media}>
-                        <div class="relative group aspect-square">
-                          <img
-                            src={
-                              PhoenixKit.Modules.Storage.URLSigner.signed_url(
-                                media.file_uuid,
-                                "thumbnail"
-                              )
-                            }
-                            alt="Post image"
-                            class="w-full h-full object-cover rounded-lg border-2 border-base-300"
-                          />
-                          <%!-- Featured badge on first image --%>
-                          <%= if media.position == 1 do %>
-                            <div class="absolute top-1 left-1 badge badge-primary badge-xs h-auto">
-                              Featured
-                            </div>
-                          <% end %>
-                          <%!-- Remove button --%>
-                          <button
-                            type="button"
-                            phx-click="remove_post_image"
-                            phx-value-id={media.uuid || media.file_uuid}
-                            class="absolute top-1 right-1 btn btn-xs btn-circle btn-error opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <.icon name="hero-x-mark" class="w-3 h-3" />
-                          </button>
-                        </div>
-                      </:item>
-                      <:add_button>
-                        <button
-                          type="button"
-                          phx-click="open_featured_image_selector"
-                          class="w-full aspect-square border-2 border-dashed border-base-300 rounded-lg hover:border-primary hover:bg-base-200 transition-all cursor-pointer flex flex-col items-center justify-center gap-1 text-base-content/60 hover:text-primary"
-                        >
-                          <.icon name="hero-plus" class="w-6 h-6" />
-                          <span class="text-xs font-medium">Add</span>
-                        </button>
-                      </:add_button>
-                    </.draggable_list>
-                  <% end %>
+                  <.live_component
+                    module={PhoenixKitWeb.Components.MediaGallery}
+                    id="post-images-gallery"
+                    selected={Enum.map(@post_images, &to_string(&1.file_uuid))}
+                    mode={:multiple}
+                    cols={4}
+                    featured_first={true}
+                    phoenix_kit_current_user={assigns[:phoenix_kit_current_user]}
+                  />
 
                   <label class="label">
                     <span class="label-text-alt text-base-content/70">
@@ -146,7 +99,6 @@
                   <.leaf_editor
                     id="post-content-editor"
                     content={@content}
-                    mode={:visual}
                     placeholder="Write your post content here... Use #hashtags for auto-tagging"
                     height="400px"
                     debounce={400}
