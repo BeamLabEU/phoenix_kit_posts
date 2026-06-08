@@ -2,7 +2,9 @@
 
 [![Hex.pm](https://img.shields.io/hexpm/v/phoenix_kit_posts.svg)](https://hex.pm/packages/phoenix_kit_posts)
 
-Posts module for [PhoenixKit](https://github.com/BeamLabEU/phoenix_kit) — blog posts, comments, tags, groups, likes, media, mentions, view tracking, and scheduled publishing.
+Social posts module for [PhoenixKit](https://github.com/BeamLabEU/phoenix_kit) — user-generated posts with threaded comments, likes/dislikes, tags, Pinterest-style boards, media galleries, @mentions, view tracking, and scheduled publishing.
+
+> **Not a blog/CMS.** For long-form articles — Markdown/`.phk` content, slugged pages, versioned and multilingual publishing — use PhoenixKit's built-in **Publishing** module. PhoenixKitPosts is for social, feed-style posting: posts, likes, boards, mentions, and threaded comments.
 
 ## Requirements
 

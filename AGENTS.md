@@ -4,7 +4,7 @@ This file provides guidance to AI agents when working with code in this reposito
 
 ## Project Overview
 
-PhoenixKit Posts module — provides blog posts, tags, groups, likes/dislikes, media attachments, mentions, and scheduled publishing. Implements the `PhoenixKit.Module` behaviour for auto-discovery by a parent Phoenix application.
+PhoenixKit Posts module — social/community posts: user-generated posts, threaded comments, tags, boards (Pinterest-style collections), likes/dislikes, media attachments, mentions, and scheduled publishing. Long-form blogging/CMS is a separate concern handled by PhoenixKit's built-in Publishing module — Posts is the social, feed-style counterpart. Implements the `PhoenixKit.Module` behaviour for auto-discovery by a parent Phoenix application.
 
 ## Common Commands
 

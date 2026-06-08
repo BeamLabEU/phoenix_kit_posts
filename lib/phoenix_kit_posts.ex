@@ -155,7 +155,7 @@ defmodule PhoenixKitPosts do
       key: "posts",
       label: "Posts",
       icon: "hero-document-text",
-      description: "Blog posts, categories, and content publishing"
+      description: "Social posts, boards, likes, and comments"
     }
   end
 
