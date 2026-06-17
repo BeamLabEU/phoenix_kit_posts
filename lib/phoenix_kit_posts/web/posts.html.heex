@@ -1,26 +1,19 @@
   <div class="container flex-col mx-auto px-4 py-6">
-    <%!-- Header Section --%>
-    <.admin_page_header
-      back={Routes.path("/admin")}
-      title="Posts"
-      subtitle="Manage and organize your social posts"
-    >
-      <:actions>
-        <.link
-          navigate={Routes.path("/admin/settings/posts")}
-          class="btn btn-ghost btn-sm"
-          title="Posts Settings"
-        >
-          <.icon name="hero-cog-6-tooth" class="w-5 h-5" />
-        </.link>
-        <.link
-          href={Routes.path("/admin/posts/new")}
-          class="btn btn-primary btn-sm"
-        >
-          + New Post
-        </.link>
-      </:actions>
-    </.admin_page_header>
+    <div class="flex flex-wrap items-center justify-end gap-2 mb-4">
+      <.link
+        navigate={Routes.path("/admin/settings/posts")}
+        class="btn btn-ghost btn-sm"
+        title="Posts Settings"
+      >
+        <.icon name="hero-cog-6-tooth" class="w-5 h-5" />
+      </.link>
+      <.link
+        href={Routes.path("/admin/posts/new")}
+        class="btn btn-primary btn-sm"
+      >
+        + New Post
+      </.link>
+    </div>
 
     <%!-- Statistics Summary --%>
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
