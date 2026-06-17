@@ -34,6 +34,7 @@ defmodule PhoenixKitPosts.Web.Groups do
       socket =
         socket
         |> assign(:page_title, "Post Groups")
+        |> assign(:page_subtitle, "Organize your posts into collections")
         |> assign(:project_title, Settings.get_project_title())
         |> assign(:current_user, socket.assigns[:phoenix_kit_current_user])
         |> assign(:groups, [])

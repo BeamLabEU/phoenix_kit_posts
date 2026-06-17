@@ -37,6 +37,7 @@ defmodule PhoenixKitPosts.Web.Settings do
     socket =
       socket
       |> assign(:page_title, "Posts Settings")
+      |> assign(:page_subtitle, "Configure posts module behavior, limits, and features")
       |> assign(:project_title, Settings.get_project_title())
       |> assign(:saving, false)
 

@@ -57,6 +57,7 @@ defmodule PhoenixKitPosts.Web.Posts do
       socket =
         socket
         |> assign(:page_title, "Posts")
+        |> assign(:page_subtitle, "Manage and organize your social posts")
         |> assign(:project_title, project_title)
         |> assign(:current_user, current_user)
         |> assign(:posts, [])

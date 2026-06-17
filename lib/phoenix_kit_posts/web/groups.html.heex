@@ -1,19 +1,12 @@
   <div class="container flex-col mx-auto px-4 py-6">
-    <%!-- Header Section --%>
-    <.admin_page_header
-      back={Routes.path("/admin/posts")}
-      title="Post Groups"
-      subtitle="Organize your posts into collections"
-    >
-      <:actions>
-        <.link
-          navigate={Routes.path("/admin/posts/groups/new")}
-          class="btn btn-primary btn-sm"
-        >
-          + New Group
-        </.link>
-      </:actions>
-    </.admin_page_header>
+    <div class="flex flex-wrap items-center justify-end gap-2 mb-4">
+      <.link
+        navigate={Routes.path("/admin/posts/groups/new")}
+        class="btn btn-primary btn-sm"
+      >
+        + New Group
+      </.link>
+    </div>
 
     <%!-- Search Bar --%>
     <div class="bg-base-200 rounded-lg p-6 mb-6">

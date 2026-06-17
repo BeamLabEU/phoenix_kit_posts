@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.6 - 2026-06-17
+
+### Changed
+- Moved each admin page's title/subtitle into the top navbar (via the `@page_subtitle` assign forwarded by core's admin layout) and removed the in-page `admin_page_header` on the Posts, Post Groups, and Settings pages; their action buttons now sit in a slim toolbar. Matches the new PhoenixKit admin header pattern. The post detail/edit pages keep their own headers.
+
 ## 0.1.5 - 2026-06-08
 
 ### Changed
