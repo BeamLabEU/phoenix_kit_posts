@@ -1,7 +1,7 @@
 defmodule PhoenixKitPosts.MixProject do
   use Mix.Project
 
-  @version "0.1.6"
+  @version "0.1.7"
   @source_url "https://github.com/BeamLabEU/phoenix_kit_posts"
 
   def project do
@@ -63,6 +63,10 @@ defmodule PhoenixKitPosts.MixProject do
 
       # LiveView is needed for the admin pages.
       {:phoenix_live_view, "~> 1.1"},
+
+      # Markdown rendering for the post detail page. Declared directly because
+      # phoenix_kit dropped its transitive (now-retired) earmark dep in 1.7.161.
+      {:mdex, "~> 0.13"},
 
       # Optional: add ex_doc for generating documentation
       {:ex_doc, "~> 0.34", only: :dev, runtime: false},

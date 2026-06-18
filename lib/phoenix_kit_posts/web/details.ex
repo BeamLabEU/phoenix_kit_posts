@@ -30,6 +30,7 @@ defmodule PhoenixKitPosts.Web.Details do
 
   alias PhoenixKit.Settings
   alias PhoenixKit.Users.Roles
+  alias PhoenixKit.Utils.HtmlSanitizer
   alias PhoenixKit.Utils.Routes
 
   @post_preloads [:user, [media: :file], :tags, :groups, :mentions]
@@ -189,16 +190,27 @@ defmodule PhoenixKitPosts.Web.Details do
   defp format_status_badge_class(_), do: "badge badge-ghost"
 
   defp render_markdown_content(content) when is_binary(content) and content != "" do
-    case Earmark.as_html(content, %Earmark.Options{
-           code_class_prefix: "language-",
-           smartypants: true,
-           gfm: true,
-           escape: false
-         }) do
-      {:ok, html, _warnings} -> html
-      {:error, _html, _errors} -> ""
+    case MDEx.to_html(content, mdex_options()) do
+      {:ok, html} -> HtmlSanitizer.sanitize(html)
+      {:error, _error} -> ""
     end
   end
 
   defp render_markdown_content(_), do: ""
+
+  # Mirrors the previous Earmark configuration (phoenix_kit dropped its
+  # transitive, now-retired earmark dep in 1.7.161):
+  #   * GFM → strikethrough/table/autolink/tasklist extensions
+  #   * smartypants → smart typography (parse: [smart: true])
+  #   * escape: false → raw HTML passthrough (render: [unsafe: true]), which is
+  #     then run through HtmlSanitizer to strip XSS vectors from post content.
+  # Fenced code blocks still render as `<code class="language-...">` by default,
+  # matching the old `code_class_prefix: "language-"`.
+  defp mdex_options do
+    [
+      extension: [strikethrough: true, table: true, autolink: true, tasklist: true],
+      parse: [smart: true],
+      render: [unsafe: true]
+    ]
+  end
 end

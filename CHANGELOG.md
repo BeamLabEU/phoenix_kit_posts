@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.1.7 - 2026-06-18
+
+### Security
+- Sanitize the rendered post-detail markdown HTML via `PhoenixKit.Utils.HtmlSanitizer` to strip stored-XSS vectors from user-authored post content. The previous Earmark path emitted raw HTML (`escape: false`) unsanitized.
+
+### Changed
+- Render post-detail markdown with [MDEx](https://hex.pm/packages/mdex) instead of the now-retired Earmark. phoenix_kit 1.7.161 dropped its transitive `earmark` dependency, so the module now declares `mdex` directly. Rendering is preserved (GFM, smart typography, `language-` code classes).
+- Upgrade dependencies: phoenix_kit 1.7.161, phoenix_kit_comments 0.2.11.
+
+### Fixed
+- The Posts toolbar's "+ New Post" link now uses live navigation (`navigate`) instead of a full-page `href`, matching every other new/edit/view link in the module.
+- Corrected the `PhoenixKitPosts.Web.Settings` moduledoc route — the settings page mounts at `{prefix}/admin/settings/posts` (registered under `settings_tabs`), not `{prefix}/admin/posts/settings`.
+
 ## 0.1.6 - 2026-06-17
 
 ### Changed
