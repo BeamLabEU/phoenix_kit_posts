@@ -12,7 +12,7 @@ defmodule PhoenixKitPosts.Web.Settings do
 
   ## Route
 
-  This LiveView is mounted at `{prefix}/admin/posts/settings` and requires
+  This LiveView is mounted at `{prefix}/admin/settings/posts` and requires
   appropriate admin permissions.
 
   Note: `{prefix}` is your configured PhoenixKit URL prefix (default: `/phoenix_kit`).
