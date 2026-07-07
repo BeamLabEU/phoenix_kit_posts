@@ -304,9 +304,16 @@ defmodule PhoenixKitPosts do
           attrs
           |> Map.put("user_uuid", uuid)
 
-        %Post{}
-        |> Post.changeset(attrs)
-        |> repo().insert()
+        result =
+          %Post{}
+          |> Post.changeset(attrs)
+          |> repo().insert()
+
+        with {:ok, post} <- result do
+          log_post_activity("post.created", post.uuid, post.title, uuid)
+        end
+
+        result
 
       nil ->
         {:error, :user_not_found}
@@ -350,8 +357,14 @@ defmodule PhoenixKitPosts do
       iex> delete_post(post)
       {:error, %Ecto.Changeset{}}
   """
-  def delete_post(%Post{} = post) do
-    repo().delete(post)
+  def delete_post(%Post{} = post, opts \\ []) do
+    result = repo().delete(post)
+
+    with {:ok, deleted} <- result do
+      log_post_activity("post.deleted", deleted.uuid, deleted.title, post_actor(post, opts))
+    end
+
+    result
   end
 
   @doc """
@@ -561,11 +574,18 @@ defmodule PhoenixKitPosts do
       iex> publish_post(post)
       {:ok, %Post{status: "public"}}
   """
-  def publish_post(%Post{} = post) do
-    update_post(post, %{
-      status: "public",
-      published_at: UtilsDate.utc_now()
-    })
+  def publish_post(%Post{} = post, opts \\ []) do
+    result =
+      update_post(post, %{
+        status: "public",
+        published_at: UtilsDate.utc_now()
+      })
+
+    with {:ok, published} <- result do
+      log_post_activity("post.published", published.uuid, published.title, post_actor(post, opts))
+    end
+
+    result
   end
 
   @doc """
@@ -824,7 +844,13 @@ defmodule PhoenixKitPosts do
   """
   def like_post(post_uuid, user_uuid) when is_binary(user_uuid) do
     if UUIDUtils.valid?(user_uuid) do
-      do_like_post(post_uuid, user_uuid)
+      result = do_like_post(post_uuid, user_uuid)
+
+      with {:ok, _like} <- result do
+        log_post_activity("post.liked", post_uuid, nil, user_uuid)
+      end
+
+      result
     else
       {:error, :invalid_user_uuid}
     end
@@ -1563,6 +1589,40 @@ defmodule PhoenixKitPosts do
     |> limit(^per_page)
     |> offset(^offset)
   end
+
+  # Records a deep-linkable post action in PhoenixKit's activity feed. The entry
+  # carries `resource_type: "post"` + the post uuid, so the feed resolves it to
+  # the post's page via `resolve_comment_resources/1`. Guarded so posts keeps
+  # working if core's Activity module isn't loaded, and rescued so a logging
+  # failure never breaks the underlying post operation.
+  defp log_post_activity(action, post_uuid, title, actor_uuid) do
+    if Code.ensure_loaded?(PhoenixKit.Activity) do
+      metadata =
+        if title,
+          do: %{"actor_role" => "user", "title" => title},
+          else: %{"actor_role" => "user"}
+
+      PhoenixKit.Activity.log(%{
+        action: action,
+        module: "posts",
+        mode: "auto",
+        actor_uuid: actor_uuid,
+        resource_type: "post",
+        resource_uuid: post_uuid,
+        metadata: metadata
+      })
+    end
+
+    :ok
+  rescue
+    e ->
+      Logger.warning("[Posts] Failed to log activity #{action}: #{Exception.message(e)}")
+      :ok
+  end
+
+  # Actor for owner-context actions (publish/delete): an explicit `:actor_uuid`
+  # from the caller, else the post's author.
+  defp post_actor(%Post{user_uuid: owner}, opts), do: Keyword.get(opts, :actor_uuid, owner)
 
   # Get repository based on configuration (for tests and apps with custom repos)
   defp repo do
