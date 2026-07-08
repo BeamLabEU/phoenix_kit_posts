@@ -581,7 +581,11 @@ defmodule PhoenixKitPosts do
         published_at: UtilsDate.utc_now()
       })
 
-    with {:ok, published} <- result do
+    # Only log a publish event on a genuine transition to public. `publish_post`
+    # is idempotent (the scheduled handler may re-invoke it, e.g. on an Oban
+    # retry), so guarding on the prior status avoids duplicate feed entries.
+    with {:ok, published} <- result,
+         false <- post.status == "public" do
       log_post_activity("post.published", published.uuid, published.title, post_actor(post, opts))
     end
 

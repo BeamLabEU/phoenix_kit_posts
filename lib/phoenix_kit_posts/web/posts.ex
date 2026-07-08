@@ -142,7 +142,7 @@ defmodule PhoenixKitPosts.Web.Posts do
         {:noreply, socket |> put_flash(:error, "Post not found")}
 
       post ->
-        case PhoenixKitPosts.delete_post(post) do
+        case PhoenixKitPosts.delete_post(post, actor_opts(socket)) do
           {:ok, _} ->
             {:noreply,
              socket
@@ -163,7 +163,7 @@ defmodule PhoenixKitPosts.Web.Posts do
         {:noreply, socket |> put_flash(:error, "Post not found")}
 
       post ->
-        case PhoenixKitPosts.publish_post(post) do
+        case PhoenixKitPosts.publish_post(post, actor_opts(socket)) do
           {:ok, _} ->
             {:noreply,
              socket
@@ -224,6 +224,8 @@ defmodule PhoenixKitPosts.Web.Posts do
 
   @impl true
   def handle_event("bulk_publish", _params, socket) do
+    actor_opts = actor_opts(socket)
+
     count =
       Enum.reduce(socket.assigns.selected_posts, 0, fn post_uuid, acc ->
         case PhoenixKitPosts.get_post(post_uuid) do
@@ -231,7 +233,7 @@ defmodule PhoenixKitPosts.Web.Posts do
             acc
 
           post ->
-            case PhoenixKitPosts.publish_post(post) do
+            case PhoenixKitPosts.publish_post(post, actor_opts) do
               {:ok, _} -> acc + 1
               _ -> acc
             end
@@ -248,6 +250,8 @@ defmodule PhoenixKitPosts.Web.Posts do
 
   @impl true
   def handle_event("bulk_delete", _params, socket) do
+    actor_opts = actor_opts(socket)
+
     count =
       Enum.reduce(socket.assigns.selected_posts, 0, fn post_uuid, acc ->
         case PhoenixKitPosts.get_post(post_uuid) do
@@ -255,7 +259,7 @@ defmodule PhoenixKitPosts.Web.Posts do
             acc
 
           post ->
-            case PhoenixKitPosts.delete_post(post) do
+            case PhoenixKitPosts.delete_post(post, actor_opts) do
               {:ok, _} -> acc + 1
               _ -> acc
             end
@@ -299,6 +303,16 @@ defmodule PhoenixKitPosts.Web.Posts do
 
   defp posts_enabled? do
     Settings.get_setting_cached("posts_enabled", "true") == "true"
+  end
+
+  # Records the acting admin as the activity actor for owner-context operations
+  # (publish/delete). Without this the feed would attribute admin moderation to
+  # the post's author. Falls back to an empty list (author) if no current user.
+  defp actor_opts(socket) do
+    case socket.assigns[:current_user] do
+      %{uuid: uuid} -> [actor_uuid: uuid]
+      _ -> []
+    end
   end
 
   defp assign_filter_defaults(socket) do

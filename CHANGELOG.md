@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.1.8 - 2026-07-08
+
+### Added
+- Log post activities to PhoenixKit core's activity feed (PR #11). Creating,
+  publishing, deleting, and liking a post now records a `post.*` entry via
+  `PhoenixKit.Activity.log/1`, carrying `resource_type: "post"` + the post uuid so
+  the feed deep-links each entry back to `/admin/posts/{uuid}` through the existing
+  `resolve_comment_resources/1` handler. Logging is guarded (`Code.ensure_loaded?`)
+  and rescued, so it never breaks the underlying post operation when core's
+  Activity module is absent.
+
+### Fixed
+- Attribute admin-initiated publish/delete to the acting admin, not the post's
+  author. The activity actor is now threaded from the admin LiveViews
+  (`Posts` single + bulk actions, `Details` delete) via `:actor_uuid`; previously
+  the `post_actor/2` fallback recorded the *author* for every moderation action,
+  corrupting the feed's audit trail.
+- Stop logging a duplicate `post.published` on idempotent re-publish. `publish_post`
+  is re-invoked by the scheduled handler (e.g. on an Oban retry) and by the admin
+  Publish / bulk-publish buttons on already-public posts; the event is now recorded
+  only on a genuine transition to public.
+
 ## 0.1.7 - 2026-06-18
 
 ### Security
