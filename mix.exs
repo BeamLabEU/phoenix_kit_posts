@@ -1,7 +1,7 @@
 defmodule PhoenixKitPosts.MixProject do
   use Mix.Project
 
-  @version "0.1.8"
+  @version "0.1.9"
   @source_url "https://github.com/BeamLabEU/phoenix_kit_posts"
 
   def project do
@@ -81,7 +81,11 @@ defmodule PhoenixKitPosts.MixProject do
     [
       licenses: ["MIT"],
       links: %{"GitHub" => @source_url},
-      files: ~w(lib .formatter.exs mix.exs README.md CHANGELOG.md LICENSE)
+      # `priv` ships the module's own gettext catalogs (priv/gettext/**/*.po).
+      # PhoenixKitPosts.Gettext is a compile-time backend, so the consuming app
+      # compiles these catalogs from the tarball — omit `priv` and every non-English
+      # translation silently falls back to the msgid. Mirrors phoenix_kit core.
+      files: ~w(lib priv .formatter.exs mix.exs README.md CHANGELOG.md LICENSE)
     ]
   end
 

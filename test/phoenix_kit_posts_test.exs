@@ -125,6 +125,27 @@ defmodule PhoenixKitPostsTest do
     end
   end
 
+  describe "hex package" do
+    test "ships priv/ so the module's gettext catalogs are in the published tarball" do
+      files = Mix.Project.config()[:package][:files]
+
+      assert "priv" in files,
+             "priv/ must be listed in package files, otherwise priv/gettext/**/*.po " <>
+               "is excluded from the Hex tarball and every non-English translation " <>
+               "silently falls back to the English msgid"
+    end
+  end
+
+  describe "gettext backend" do
+    test "resolves the module's own translations instead of falling back to the msgid" do
+      # Guards the whole point of the module's Gettext backend: the admin
+      # LiveViews rebind gettext to PhoenixKitPosts.Gettext, so its catalogs
+      # must compile in and resolve. "ru" comes from priv/gettext/ru.
+      Gettext.put_locale(PhoenixKitPosts.Gettext, "ru")
+      assert Gettext.gettext(PhoenixKitPosts.Gettext, "Content Limits") == "Лимиты контента"
+    end
+  end
+
   describe "optional callbacks have defaults" do
     test "get_config/0 returns a map" do
       config = PhoenixKitPosts.get_config()

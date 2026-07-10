@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.1.9 - 2026-07-10
+
+### Added
+- Modernize the admin **Posts Settings** page (PR #12): a single `admin_page_header`
+  plus in-card `settings_section_header` groupings (Content Limits, Configuration,
+  Features, Moderation) replacing the previous per-card `<h2>` layout, with responsive
+  two-column grids and consistent toggle/label styling.
+- Give the module its own Gettext backend (`PhoenixKitPosts.Gettext`) and wire the
+  Settings LiveView to it, so posts strings resolve against this package's own
+  `priv/gettext` catalogs. Ships full **Estonian** and **Russian** translations for
+  every settings label, hint, option, and flash message (English falls back to the
+  source msgids).
+
+### Fixed
+- Include `priv/` in the Hex package `files`. `PhoenixKitPosts.Gettext` is a
+  compile-time backend, so the consuming app compiles its catalogs from the tarball;
+  without `priv/` the newly added `priv/gettext/**/*.po` files were excluded and every
+  non-English translation silently fell back to the English msgid in the published
+  package.
+
 ## 0.1.8 - 2026-07-08
 
 ### Added
