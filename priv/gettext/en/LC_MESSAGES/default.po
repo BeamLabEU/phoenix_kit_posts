@@ -1,0 +1,244 @@
+## "msgid"s in this file come from POT (.pot) files.
+###
+### Do not add, change, or remove "msgid"s manually here as
+### they're tied to the ones in the corresponding POT file
+### (with the same domain).
+###
+### Use "mix gettext.extract --merge" or "mix gettext.merge"
+### to merge POT files into PO files.
+msgid ""
+msgstr ""
+"Language: en\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: lib/phoenix_kit_posts/web/settings.html.heex:331
+#, elixir-autogen, elixir-format
+msgid "All new posts must be approved by an admin before going public"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/settings.html.heex:244
+#, elixir-autogen, elixir-format
+msgid "Allow Groups"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/settings.html.heex:264
+#, elixir-autogen, elixir-format
+msgid "Allow Reposts"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/settings.html.heex:224
+#, elixir-autogen, elixir-format
+msgid "Allow Scheduling"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/settings.html.heex:208
+#, elixir-autogen, elixir-format
+msgid "Allow users to like/favorite posts"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/settings.html.heex:284
+#, elixir-autogen, elixir-format
+msgid "Auto-generate SEO Slugs"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/settings.html.heex:288
+#, elixir-autogen, elixir-format
+msgid "Automatically create URL-friendly slugs from post titles"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/settings.html.heex:141
+#, elixir-autogen, elixir-format
+msgid "Configuration"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/settings.ex:42
+#: lib/phoenix_kit_posts/web/settings.html.heex:5
+#, elixir-autogen, elixir-format
+msgid "Configure posts module behavior, limits, and features"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/settings.html.heex:13
+#, elixir-autogen, elixir-format
+msgid "Content Limits"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/settings.html.heex:167
+#, elixir-autogen, elixir-format
+msgid "Default Post Status"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/settings.html.heex:184
+#, elixir-autogen, elixir-format
+msgid "Default visibility status for new posts"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/settings.html.heex:308
+#, elixir-autogen, elixir-format
+msgid "Display view counter on posts"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/settings.html.heex:172
+#, elixir-autogen, elixir-format
+msgid "Draft"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/settings.html.heex:204
+#, elixir-autogen, elixir-format
+msgid "Enable Likes"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/settings.html.heex:228
+#, elixir-autogen, elixir-format
+msgid "Enable scheduling posts for future publication"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/settings.html.heex:268
+#, elixir-autogen, elixir-format
+msgid "Enable sharing/reposting of other users' posts"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/settings.html.heex:248
+#, elixir-autogen, elixir-format
+msgid "Enable user-specific post collections (Pinterest-style)"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/settings.ex:75
+#, elixir-autogen, elixir-format
+msgid "Failed to save some settings"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/settings.html.heex:190
+#, elixir-autogen, elixir-format
+msgid "Features"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/settings.html.heex:83
+#, elixir-autogen, elixir-format
+msgid "Max Content Length"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/settings.html.heex:21
+#, elixir-autogen, elixir-format
+msgid "Max Media Per Post"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/settings.html.heex:103
+#, elixir-autogen, elixir-format
+msgid "Max Mentions"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/settings.html.heex:62
+#, elixir-autogen, elixir-format
+msgid "Max Subtitle Length"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/settings.html.heex:123
+#, elixir-autogen, elixir-format
+msgid "Max Tags"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/settings.html.heex:41
+#, elixir-autogen, elixir-format
+msgid "Max Title Length"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/settings.html.heex:95
+#, elixir-autogen, elixir-format
+msgid "Maximum characters for post content (100-100000)"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/settings.html.heex:75
+#, elixir-autogen, elixir-format
+msgid "Maximum characters for post subtitle/tagline (10-1000)"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/settings.html.heex:53
+#, elixir-autogen, elixir-format
+msgid "Maximum characters for post title (10-500)"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/settings.html.heex:135
+#, elixir-autogen, elixir-format
+msgid "Maximum hashtags per post (0-100)"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/settings.html.heex:33
+#, elixir-autogen, elixir-format
+msgid "Maximum number of images/media files per post (0-50)"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/settings.html.heex:115
+#, elixir-autogen, elixir-format
+msgid "Maximum user mentions per post (0-50)"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/settings.html.heex:314
+#, elixir-autogen, elixir-format
+msgid "Moderation"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/settings.html.heex:159
+#, elixir-autogen, elixir-format
+msgid "Number of posts to display per page (5-100)"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/settings.html.heex:147
+#, elixir-autogen, elixir-format
+msgid "Posts Per Page"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/settings.ex:41
+#: lib/phoenix_kit_posts/web/settings.html.heex:4
+#, elixir-autogen, elixir-format
+msgid "Posts Settings"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/settings.html.heex:175
+#, elixir-autogen, elixir-format
+msgid "Public"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/settings.html.heex:327
+#, elixir-autogen, elixir-format
+msgid "Require Post Approval"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/settings.html.heex:360
+#, elixir-autogen, elixir-format
+msgid "Reset"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/settings.html.heex:355
+#, elixir-autogen, elixir-format
+msgid "Reset ALL posts settings to their defaults? Limits, features and moderation toggles will be replaced. This cannot be undone."
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/settings.html.heex:346
+#, elixir-autogen, elixir-format
+msgid "Save Settings"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/settings.html.heex:344
+#, elixir-autogen, elixir-format
+msgid "Saving..."
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/settings.ex:112
+#, elixir-autogen, elixir-format
+msgid "Settings reset to defaults"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/settings.ex:72
+#, elixir-autogen, elixir-format
+msgid "Settings saved successfully"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/settings.html.heex:304
+#, elixir-autogen, elixir-format
+msgid "Show View Count"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/settings.html.heex:178
+#, elixir-autogen, elixir-format
+msgid "Unlisted"
+msgstr ""
