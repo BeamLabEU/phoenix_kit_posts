@@ -30,14 +30,16 @@ defmodule PhoenixKitPosts.Web.Settings do
   """
 
   use PhoenixKitWeb, :live_view
+  # Rebind gettext macros to the posts module's own catalogs (priv/gettext).
+  use Gettext, backend: PhoenixKitPosts.Gettext
 
   alias PhoenixKit.Settings
 
   def mount(_params, _session, socket) do
     socket =
       socket
-      |> assign(:page_title, "Posts Settings")
-      |> assign(:page_subtitle, "Configure posts module behavior, limits, and features")
+      |> assign(:page_title, gettext("Posts Settings"))
+      |> assign(:page_subtitle, gettext("Configure posts module behavior, limits, and features"))
       |> assign(:project_title, Settings.get_project_title())
       |> assign(:saving, false)
 
@@ -67,10 +69,10 @@ defmodule PhoenixKitPosts.Web.Settings do
            _ -> false
          end) do
         socket
-        |> put_flash(:info, "Settings saved successfully")
+        |> put_flash(:info, gettext("Settings saved successfully"))
         |> load_settings()
       else
-        put_flash(socket, :error, "Failed to save some settings")
+        put_flash(socket, :error, gettext("Failed to save some settings"))
       end
 
     {:noreply, assign(socket, :saving, false)}
@@ -107,7 +109,7 @@ defmodule PhoenixKitPosts.Web.Settings do
 
     {:noreply,
      socket
-     |> put_flash(:info, "Settings reset to defaults")
+     |> put_flash(:info, gettext("Settings reset to defaults"))
      |> load_settings()}
   end
 
@@ -142,5 +144,27 @@ defmodule PhoenixKitPosts.Web.Settings do
     |> assign(:posts_show_view_count, Settings.get_setting("posts_show_view_count", "true"))
     # Moderation
     |> assign(:posts_require_approval, Settings.get_setting("posts_require_approval", "false"))
+  end
+
+  @doc """
+  Lightweight in-card section heading (icon + title + rule). Local copy of
+  core's `Core.FormSection.section_header/1` under a distinct name, so this
+  package renders identically without requiring a core release that exports
+  it (and won't conflict with the core import once it does).
+  """
+  attr(:icon, :string, required: true)
+  attr(:title, :string, required: true)
+  attr(:class, :string, default: nil)
+
+  def settings_section_header(assigns) do
+    ~H"""
+    <div class={["flex items-center gap-2 pt-4 first:pt-0", @class]}>
+      <.icon name={@icon} class="w-4 h-4 text-primary/70" />
+      <h3 class="text-sm font-semibold uppercase tracking-wide text-base-content/60">
+        {@title}
+      </h3>
+      <div class="flex-1 border-t border-base-300 ml-2"></div>
+    </div>
+    """
   end
 end
