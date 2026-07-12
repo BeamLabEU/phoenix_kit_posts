@@ -192,122 +192,76 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
           <%!-- Likes Enabled --%>
           <div class="form-control w-full">
-            <label class="label cursor-pointer justify-start gap-4">
-              <input type="hidden" name="settings[posts_likes_enabled]" value="false" />
-              <input
-                type="checkbox"
-                name="settings[posts_likes_enabled]"
-                value="true"
-                class="toggle toggle-primary"
-                checked={@posts_likes_enabled == "true"}
-              />
-              <span class="label-text font-medium">{gettext("Enable Likes")}</span>
-            </label>
-            <div class="label pt-0">
-              <span class="label-text-alt text-xs text-base-content/50">
-                {gettext("Allow users to like/favorite posts")}
-              </span>
-            </div>
+            <.checkbox
+              name="settings[posts_likes_enabled]"
+              checked={@posts_likes_enabled == "true"}
+              label={gettext("Enable Likes")}
+            >
+              <:description>{gettext("Allow users to like/favorite posts")}</:description>
+            </.checkbox>
           </div>
 
           <%!-- Allow Scheduling --%>
           <div class="form-control w-full">
-            <label class="label cursor-pointer justify-start gap-4">
-              <input type="hidden" name="settings[posts_allow_scheduling]" value="false" />
-              <input
-                type="checkbox"
-                name="settings[posts_allow_scheduling]"
-                value="true"
-                class="toggle toggle-primary"
-                checked={@posts_allow_scheduling == "true"}
-              />
-              <span class="label-text font-medium">{gettext("Allow Scheduling")}</span>
-            </label>
-            <div class="label pt-0">
-              <span class="label-text-alt text-xs text-base-content/50">
+            <.checkbox
+              name="settings[posts_allow_scheduling]"
+              checked={@posts_allow_scheduling == "true"}
+              label={gettext("Allow Scheduling")}
+            >
+              <:description>
                 {gettext("Enable scheduling posts for future publication")}
-              </span>
-            </div>
+              </:description>
+            </.checkbox>
           </div>
 
           <%!-- Allow Groups --%>
           <div class="form-control w-full">
-            <label class="label cursor-pointer justify-start gap-4">
-              <input type="hidden" name="settings[posts_allow_groups]" value="false" />
-              <input
-                type="checkbox"
-                name="settings[posts_allow_groups]"
-                value="true"
-                class="toggle toggle-primary"
-                checked={@posts_allow_groups == "true"}
-              />
-              <span class="label-text font-medium">{gettext("Allow Groups")}</span>
-            </label>
-            <div class="label pt-0">
-              <span class="label-text-alt text-xs text-base-content/50">
+            <.checkbox
+              name="settings[posts_allow_groups]"
+              checked={@posts_allow_groups == "true"}
+              label={gettext("Allow Groups")}
+            >
+              <:description>
                 {gettext("Enable user-specific post collections (Pinterest-style)")}
-              </span>
-            </div>
+              </:description>
+            </.checkbox>
           </div>
 
           <%!-- Allow Reposts --%>
           <div class="form-control w-full">
-            <label class="label cursor-pointer justify-start gap-4">
-              <input type="hidden" name="settings[posts_allow_reposts]" value="false" />
-              <input
-                type="checkbox"
-                name="settings[posts_allow_reposts]"
-                value="true"
-                class="toggle toggle-primary"
-                checked={@posts_allow_reposts == "true"}
-              />
-              <span class="label-text font-medium">{gettext("Allow Reposts")}</span>
-            </label>
-            <div class="label pt-0">
-              <span class="label-text-alt text-xs text-base-content/50">
+            <.checkbox
+              name="settings[posts_allow_reposts]"
+              checked={@posts_allow_reposts == "true"}
+              label={gettext("Allow Reposts")}
+            >
+              <:description>
                 {gettext("Enable sharing/reposting of other users' posts")}
-              </span>
-            </div>
+              </:description>
+            </.checkbox>
           </div>
 
           <%!-- SEO Auto Slug --%>
           <div class="form-control w-full">
-            <label class="label cursor-pointer justify-start gap-4">
-              <input type="hidden" name="settings[posts_seo_auto_slug]" value="false" />
-              <input
-                type="checkbox"
-                name="settings[posts_seo_auto_slug]"
-                value="true"
-                class="toggle toggle-primary"
-                checked={@posts_seo_auto_slug == "true"}
-              />
-              <span class="label-text font-medium">{gettext("Auto-generate SEO Slugs")}</span>
-            </label>
-            <div class="label pt-0">
-              <span class="label-text-alt text-xs text-base-content/50">
+            <.checkbox
+              name="settings[posts_seo_auto_slug]"
+              checked={@posts_seo_auto_slug == "true"}
+              label={gettext("Auto-generate SEO Slugs")}
+            >
+              <:description>
                 {gettext("Automatically create URL-friendly slugs from post titles")}
-              </span>
-            </div>
+              </:description>
+            </.checkbox>
           </div>
 
           <%!-- Show View Count --%>
           <div class="form-control w-full">
-            <label class="label cursor-pointer justify-start gap-4">
-              <input type="hidden" name="settings[posts_show_view_count]" value="false" />
-              <input
-                type="checkbox"
-                name="settings[posts_show_view_count]"
-                value="true"
-                class="toggle toggle-primary"
-                checked={@posts_show_view_count == "true"}
-              />
-              <span class="label-text font-medium">{gettext("Show View Count")}</span>
-            </label>
-            <div class="label pt-0">
-              <span class="label-text-alt text-xs text-base-content/50">
-                {gettext("Display view counter on posts")}
-              </span>
-            </div>
+            <.checkbox
+              name="settings[posts_show_view_count]"
+              checked={@posts_show_view_count == "true"}
+              label={gettext("Show View Count")}
+            >
+              <:description>{gettext("Display view counter on posts")}</:description>
+            </.checkbox>
           </div>
         </div>
 
@@ -315,22 +269,16 @@
 
         <%!-- Require Approval --%>
         <div class="form-control w-full">
-          <label class="label cursor-pointer justify-start gap-4">
-            <input type="hidden" name="settings[posts_require_approval]" value="false" />
-            <input
-              type="checkbox"
-              name="settings[posts_require_approval]"
-              value="true"
-              class="toggle toggle-warning"
-              checked={@posts_require_approval == "true"}
-            />
-            <span class="label-text font-medium">{gettext("Require Post Approval")}</span>
-          </label>
-          <div class="label pt-0">
-            <span class="label-text-alt text-xs text-base-content/50">
+          <.checkbox
+            name="settings[posts_require_approval]"
+            checked={@posts_require_approval == "true"}
+            label={gettext("Require Post Approval")}
+            class="checkbox-warning"
+          >
+            <:description>
               {gettext("All new posts must be approved by an admin before going public")}
-            </span>
-          </div>
+            </:description>
+          </.checkbox>
         </div>
 
         <%!-- Action Buttons --%>
