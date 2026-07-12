@@ -64,7 +64,7 @@ defmodule PhoenixKitPosts.Web.Posts do
         |> assign(:total_count, 0)
         |> assign(:stats, %{total: 0, drafts: 0, public: 0, scheduled: 0})
         |> assign(:loading, true)
-        |> assign(:selected_posts, [])
+        |> assign(:bulk_uuids, [])
         |> assign(:groups, [])
         |> assign_filter_defaults()
         |> assign_pagination_defaults()
@@ -199,35 +199,16 @@ defmodule PhoenixKitPosts.Web.Posts do
   end
 
   @impl true
-  def handle_event("select_post", %{"id" => post_uuid, "value" => value}, socket) do
-    selected_posts =
-      if value == "on" do
-        [post_uuid | socket.assigns.selected_posts] |> Enum.uniq()
-      else
-        Enum.reject(socket.assigns.selected_posts, &(&1 == post_uuid))
-      end
-
-    {:noreply, assign(socket, :selected_posts, selected_posts)}
+  def handle_event("capture_selection", %{"uuids" => uuids}, socket) do
+    {:noreply, assign(socket, :bulk_uuids, uuids)}
   end
 
   @impl true
-  def handle_event("select_all", %{"value" => value}, socket) do
-    selected_posts =
-      if value == "on" do
-        Enum.map(socket.assigns.posts, & &1.uuid)
-      else
-        []
-      end
-
-    {:noreply, assign(socket, :selected_posts, selected_posts)}
-  end
-
-  @impl true
-  def handle_event("bulk_publish", _params, socket) do
+  def handle_event("bulk_publish", %{"uuids" => uuids}, socket) do
     actor_opts = actor_opts(socket)
 
     count =
-      Enum.reduce(socket.assigns.selected_posts, 0, fn post_uuid, acc ->
+      Enum.reduce(uuids, 0, fn post_uuid, acc ->
         case PhoenixKitPosts.get_post(post_uuid) do
           nil ->
             acc
@@ -243,17 +224,16 @@ defmodule PhoenixKitPosts.Web.Posts do
     {:noreply,
      socket
      |> put_flash(:info, "Published #{count} post(s)")
-     |> assign(:selected_posts, [])
      |> load_posts()
      |> load_stats()}
   end
 
   @impl true
-  def handle_event("bulk_delete", _params, socket) do
+  def handle_event("bulk_delete", %{"uuids" => uuids}, socket) do
     actor_opts = actor_opts(socket)
 
     count =
-      Enum.reduce(socket.assigns.selected_posts, 0, fn post_uuid, acc ->
+      Enum.reduce(uuids, 0, fn post_uuid, acc ->
         case PhoenixKitPosts.get_post(post_uuid) do
           nil ->
             acc
@@ -269,19 +249,17 @@ defmodule PhoenixKitPosts.Web.Posts do
     {:noreply,
      socket
      |> put_flash(:info, "Deleted #{count} post(s)")
-     |> assign(:selected_posts, [])
      |> load_posts()
      |> load_stats()}
   end
 
   @impl true
   def handle_event("bulk_add_to_group", %{"group_uuid" => group_uuid}, socket) do
-    case PhoenixKitPosts.add_posts_to_group(socket.assigns.selected_posts, group_uuid) do
+    case PhoenixKitPosts.add_posts_to_group(socket.assigns.bulk_uuids, group_uuid) do
       {:ok, count} ->
         {:noreply,
          socket
          |> put_flash(:info, "Added #{count} post(s) to group")
-         |> assign(:selected_posts, [])
          |> load_posts()}
 
       {:error, _reason} ->
