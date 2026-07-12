@@ -5,6 +5,7 @@ defmodule PhoenixKitPosts.CommentDislike do
   New comment dislikes should use `PhoenixKitComments.CommentDislike` instead.
   """
   use Ecto.Schema
+  use PhoenixKit.SchemaPrefix
   import Ecto.Changeset
 
   @primary_key {:uuid, UUIDv7, autogenerate: true}
