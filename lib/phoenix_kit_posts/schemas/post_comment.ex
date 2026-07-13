@@ -6,6 +6,7 @@ defmodule PhoenixKitPosts.PostComment do
   New comments should use `PhoenixKitComments.Comment` instead.
   """
   use Ecto.Schema
+  use PhoenixKit.SchemaPrefix
   import Ecto.Changeset
 
   @primary_key {:uuid, UUIDv7, autogenerate: true}

@@ -5,6 +5,7 @@ defmodule PhoenixKitPosts.CommentLike do
   New comment likes should use `PhoenixKitComments.CommentLike` instead.
   """
   use Ecto.Schema
+  use PhoenixKit.SchemaPrefix
   import Ecto.Changeset
 
   @primary_key {:uuid, UUIDv7, autogenerate: true}
