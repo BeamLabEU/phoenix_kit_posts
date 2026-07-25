@@ -92,7 +92,9 @@ defmodule PhoenixKitPosts.MixProject do
   defp docs do
     [
       main: "PhoenixKitPosts",
-      source_ref: "v#{@version}"
+      # Tags in this repo are bare version numbers, not v-prefixed — a "v" ref
+      # points at a tag that does not exist and 404s every HexDocs source link.
+      source_ref: @version
     ]
   end
 end
