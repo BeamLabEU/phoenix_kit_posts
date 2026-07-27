@@ -146,6 +146,34 @@ defmodule PhoenixKitPostsTest do
     end
   end
 
+  describe "editor mode" do
+    # The post editor passes this value straight to Leaf's :mode attr, whose
+    # internal normalize_mode/2 has no catch-all clause — an unknown mode
+    # crashes the editor rather than degrading. Core's get_editor_mode/0 is
+    # also absent from older pinned builds, so every path must land on a
+    # mode Leaf accepts.
+    alias PhoenixKitPosts.Web.Edit
+
+    test "passes through the modes Leaf accepts" do
+      for mode <- [:visual, :hybrid, :markdown, :html] do
+        assert Edit.__normalize_editor_mode__(mode) == mode
+      end
+    end
+
+    test "converts the setting's string values to atoms" do
+      assert Edit.__normalize_editor_mode__("visual") == :visual
+      assert Edit.__normalize_editor_mode__("markdown") == :markdown
+      assert Edit.__normalize_editor_mode__("html") == :html
+      assert Edit.__normalize_editor_mode__("hybrid") == :hybrid
+    end
+
+    test "falls back to :hybrid for unknown or missing values" do
+      assert Edit.__normalize_editor_mode__("wysiwyg") == :hybrid
+      assert Edit.__normalize_editor_mode__(:wysiwyg) == :hybrid
+      assert Edit.__normalize_editor_mode__(nil) == :hybrid
+    end
+  end
+
   describe "optional callbacks have defaults" do
     test "get_config/0 returns a map" do
       config = PhoenixKitPosts.get_config()

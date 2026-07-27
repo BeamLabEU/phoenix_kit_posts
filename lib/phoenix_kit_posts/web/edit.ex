@@ -27,6 +27,17 @@ defmodule PhoenixKitPosts.Web.Edit do
   alias PhoenixKit.Users.Roles
   alias PhoenixKit.Utils.Routes
 
+  # `get_editor_mode/0` only exists in newer phoenix_kit builds, but our pin
+  # still allows older ones — `default_editor_mode/0` probes for it at runtime,
+  # so the compiler shouldn't flag the call in the meantime.
+  @compile {:no_warn_undefined, {PhoenixKit.Settings, :get_editor_mode, 0}}
+
+  # The modes Leaf's `:mode` attr accepts, and the one Leaf itself defaults
+  # to. Anything outside this list must never reach Leaf — its internal
+  # normalize_mode/2 has no catch-all clause.
+  @leaf_editor_modes [:visual, :hybrid, :markdown, :html]
+  @default_editor_mode :hybrid
+
   @impl true
   def mount(_params, _session, socket) do
     socket =
@@ -37,7 +48,6 @@ defmodule PhoenixKitPosts.Web.Edit do
       |> assign(:post, nil)
       |> assign(:form, nil)
       |> assign(:content, "")
-      |> assign(:editor_mode, Settings.get_editor_mode())
 
     {:ok, socket}
   end
@@ -482,11 +492,42 @@ defmodule PhoenixKitPosts.Web.Edit do
     |> assign(:allow_scheduling, allow_scheduling)
     |> assign(:allow_groups, allow_groups)
     |> assign(:seo_auto_slug, seo_auto_slug)
+    |> assign(:editor_mode, default_editor_mode())
     |> assign(:show_media_selector, false)
     |> assign(:inserting_media_type, nil)
     |> assign(:media_selector_mode, :single)
     |> load_post_images()
   end
+
+  # Site-wide default editor mode for the post content editor (admin-set
+  # under Settings → Content Editor). `PhoenixKit.Settings.get_editor_mode/0`
+  # only exists in newer core builds, but our pin allows older ones — so probe
+  # for the function before calling it (the `no_warn_undefined` above covers
+  # the compile side); drop the probe once the pin requires a core that exports
+  # it. Settings reads can also raise when no repo is configured, same as
+  # `PhoenixKitPosts.enabled?/0` — hence the rescue. Mirrors
+  # phoenix_kit_comments, which reads the same setting.
+  defp default_editor_mode do
+    if Code.ensure_loaded?(Settings) and function_exported?(Settings, :get_editor_mode, 0) do
+      __normalize_editor_mode__(Settings.get_editor_mode())
+    else
+      @default_editor_mode
+    end
+  rescue
+    _ -> @default_editor_mode
+  end
+
+  @doc false
+  # Public only so the mode contract can be pinned by a unit test. Leaf's mode
+  # clauses have no catch-all, so a string setting value or anything
+  # unrecognised must be normalised here rather than blowing up inside Leaf.
+  def __normalize_editor_mode__(mode) when mode in @leaf_editor_modes, do: mode
+
+  def __normalize_editor_mode__(mode) when is_binary(mode) do
+    Enum.find(@leaf_editor_modes, @default_editor_mode, &(to_string(&1) == mode))
+  end
+
+  def __normalize_editor_mode__(_mode), do: @default_editor_mode
 
   defp load_post_images(socket) do
     post_uuid = Map.get(socket.assigns.post, :uuid)

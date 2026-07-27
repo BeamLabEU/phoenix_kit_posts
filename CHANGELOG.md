@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.1.10 - 2026-07-27
+
+### Added
+- Open the post content editor in the site-wide default editor mode (PR #14).
+  The editor now honours PhoenixKit core's `editor_default_mode` setting
+  (admin-editable under Settings → Content Editor) instead of always opening in
+  Leaf's built-in default; users can still switch modes inside the editor.
+
+### Fixed
+- Don't call `PhoenixKit.Settings.get_editor_mode/0` unconditionally. That function
+  exists only in unreleased core builds, while this package's pin (`~> 1.7.189`)
+  admits older ones — as merged, PR #14 emitted an `undefined or private` compile
+  warning (failing `mix precommit`) and crashed the post editor's `mount/3` with an
+  `UndefinedFunctionError` on every released phoenix_kit. The setting is now read
+  through a `function_exported?` probe that falls back to `:hybrid`, matching how
+  `phoenix_kit_comments` reads the same setting.
+- Normalise the editor mode before handing it to Leaf. Leaf's internal
+  `normalize_mode/2` has no catch-all clause, so an unexpected value (a raw string
+  from the settings row, `nil`, a mode added later) raised a `FunctionClauseError`
+  inside the component; unknown values now fall back to `:hybrid`.
+- Read the editor-mode setting in `handle_params/3` (via `load_form_data/1`, where
+  every other posts setting is loaded) rather than in `mount/3`, which runs twice
+  per page load.
+- Drop the orphaned `beamlab_ex_aws_sqs` entry from `mix.lock`. phoenix_kit 1.7.213
+  depends on that package under the `:ex_aws_sqs` key, leaving the old entry unused
+  and `mix deps.unlock --check-unused` (and therefore `mix precommit`) failing.
+
 ## 0.1.9 - 2026-07-10
 
 ### Added

@@ -1,7 +1,7 @@
 defmodule PhoenixKitPosts.MixProject do
   use Mix.Project
 
-  @version "0.1.9"
+  @version "0.1.10"
   @source_url "https://github.com/BeamLabEU/phoenix_kit_posts"
 
   def project do
@@ -20,7 +20,13 @@ defmodule PhoenixKitPosts.MixProject do
       package: package(),
 
       # Dialyzer
-      dialyzer: [plt_add_apps: [:phoenix_kit]],
+      dialyzer: [
+        plt_add_apps: [:phoenix_kit],
+        ignore_warnings: ".dialyzer_ignore.exs",
+        # Fail once a filter stops matching, so entries covering a
+        # not-yet-released core API don't outlive the release that adds it.
+        list_unused_filters: true
+      ],
 
       # Docs
       name: "PhoenixKitPosts",
