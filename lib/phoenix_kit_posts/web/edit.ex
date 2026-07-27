@@ -37,6 +37,7 @@ defmodule PhoenixKitPosts.Web.Edit do
       |> assign(:post, nil)
       |> assign(:form, nil)
       |> assign(:content, "")
+      |> assign(:editor_mode, Settings.get_editor_mode())
 
     {:ok, socket}
   end
