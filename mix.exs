@@ -63,7 +63,7 @@ defmodule PhoenixKitPosts.MixProject do
   defp deps do
     [
       # PhoenixKit provides the Module behaviour and Settings API.
-      {:phoenix_kit, "~> 1.7.189"},
+      {:phoenix_kit, "~> 1.7.214"},
       # Comments module for post detail page comments section.
       {:phoenix_kit_comments, "~> 0.2"},
 
