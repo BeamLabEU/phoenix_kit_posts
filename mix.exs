@@ -64,8 +64,11 @@ defmodule PhoenixKitPosts.MixProject do
     [
       # PhoenixKit provides the Module behaviour and Settings API.
       {:phoenix_kit, "~> 1.7.214"},
-      # Comments module for post detail page comments section.
-      {:phoenix_kit_comments, "~> 0.2"},
+      # Comments module for post detail page comments section. 0.2.6 is the
+      # floor: `Web.Details` does `use PhoenixKitComments.Embed`, which that
+      # release first published. The `use` is unguarded, so 0.2.0–0.2.5 fails
+      # to compile in the consumer's build.
+      {:phoenix_kit_comments, "~> 0.2.6"},
 
       # LiveView is needed for the admin pages.
       {:phoenix_live_view, "~> 1.1"},
