@@ -279,5 +279,5 @@ defmodule PhoenixKitPosts.Post do
   # non-ASCII character, so a Cyrillic or Greek title produced an EMPTY slug and
   # German "Größe" lost its umlaut and its ß. `Slug.slugify/2` romanizes instead,
   # and takes a locale when the caller knows one.
-  defp slugify(title), do: Slug.slugify(title)
+  defp slugify(title), do: Slug.slugify(title, transliterate: true)
 end

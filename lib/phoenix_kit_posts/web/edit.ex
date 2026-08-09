@@ -563,7 +563,7 @@ defmodule PhoenixKitPosts.Web.Edit do
       # Core's rule, not a local copy. The pipeline this replaced deleted every
       # non-ASCII character, so a Cyrillic title produced an EMPTY slug — which
       # the form then treated as "no slug yet" on every subsequent save.
-      generated_slug = Slug.slugify(title)
+      generated_slug = Slug.slugify(title, transliterate: true)
 
       Map.put(post_params, "slug", generated_slug)
     else
