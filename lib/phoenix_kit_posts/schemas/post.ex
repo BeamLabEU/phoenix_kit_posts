@@ -76,6 +76,8 @@ defmodule PhoenixKitPosts.Post do
   use Ecto.Schema
   use PhoenixKit.SchemaPrefix
   import Ecto.Changeset
+
+  alias PhoenixKit.Utils.Slug
   alias PhoenixKit.Utils.Date, as: UtilsDate
 
   @primary_key {:uuid, UUIDv7, autogenerate: true}
@@ -273,11 +275,9 @@ defmodule PhoenixKitPosts.Post do
     end
   end
 
-  defp slugify(title) do
-    title
-    |> String.downcase()
-    |> String.replace(~r/[^\w\s-]/, "")
-    |> String.replace(~r/\s+/, "-")
-    |> String.trim("-")
-  end
+  # Core's rule, not a local copy. The pipeline this replaced stripped every
+  # non-ASCII character, so a Cyrillic or Greek title produced an EMPTY slug and
+  # German "Größe" lost its umlaut and its ß. `Slug.slugify/2` romanizes instead,
+  # and takes a locale when the caller knows one.
+  defp slugify(title), do: Slug.slugify(title)
 end

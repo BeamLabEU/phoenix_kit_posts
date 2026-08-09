@@ -24,6 +24,7 @@ defmodule PhoenixKitPosts.Web.Edit do
   import Leaf, only: [leaf_editor: 1]
   alias PhoenixKit.Modules.Storage.URLSigner
   alias PhoenixKit.Settings
+  alias PhoenixKit.Utils.Slug
   alias PhoenixKit.Users.Roles
   alias PhoenixKit.Utils.Routes
 
@@ -559,13 +560,10 @@ defmodule PhoenixKitPosts.Web.Edit do
 
     if seo_auto_slug and (slug == "" or is_nil(slug)) and title != "" do
       # Generate slug from title
-      generated_slug =
-        title
-        |> String.downcase()
-        |> String.replace(~r/[^a-z0-9\s-]/, "")
-        |> String.replace(~r/\s+/, "-")
-        |> String.replace(~r/-+/, "-")
-        |> String.trim("-")
+      # Core's rule, not a local copy. The pipeline this replaced deleted every
+      # non-ASCII character, so a Cyrillic title produced an EMPTY slug — which
+      # the form then treated as "no slug yet" on every subsequent save.
+      generated_slug = Slug.slugify(title)
 
       Map.put(post_params, "slug", generated_slug)
     else

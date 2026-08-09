@@ -26,6 +26,7 @@ defmodule PhoenixKitPosts.Web.GroupEdit do
   alias Phoenix.Component
 
   alias PhoenixKit.Settings
+  alias PhoenixKit.Utils.Slug
   alias PhoenixKit.Utils.Routes
 
   @impl true
@@ -189,13 +190,10 @@ defmodule PhoenixKitPosts.Web.GroupEdit do
 
     if (slug == "" or is_nil(slug)) and name != "" do
       # Generate slug from name
-      generated_slug =
-        name
-        |> String.downcase()
-        |> String.replace(~r/[^a-z0-9\s-]/, "")
-        |> String.replace(~r/\s+/, "-")
-        |> String.replace(~r/-+/, "-")
-        |> String.trim("-")
+      # Core's rule, not a local copy. The pipeline this replaced deleted every
+      # non-ASCII character, so a Cyrillic title produced an EMPTY slug — which
+      # the form then treated as "no slug yet" on every subsequent save.
+      generated_slug = Slug.slugify(name)
 
       Map.put(group_params, "slug", generated_slug)
     else
