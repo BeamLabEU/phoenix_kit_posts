@@ -1,7 +1,7 @@
 defmodule PhoenixKitPosts.MixProject do
   use Mix.Project
 
-  @version "0.1.10"
+  @version "0.2.0"
   @source_url "https://github.com/BeamLabEU/phoenix_kit_posts"
 
   def project do
@@ -63,12 +63,12 @@ defmodule PhoenixKitPosts.MixProject do
   defp deps do
     [
       # PhoenixKit provides the Module behaviour and Settings API.
-      {:phoenix_kit, "~> 1.7.214"},
+      {:phoenix_kit, "~> 2.0"},
       # Comments module for post detail page comments section. 0.2.6 is the
       # floor: `Web.Details` does `use PhoenixKitComments.Embed`, which that
       # release first published. The `use` is unguarded, so 0.2.0–0.2.5 fails
       # to compile in the consumer's build.
-      {:phoenix_kit_comments, "~> 0.2.6"},
+      {:phoenix_kit_comments, "~> 0.3"},
 
       # LiveView is needed for the admin pages.
       {:phoenix_live_view, "~> 1.1"},

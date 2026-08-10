@@ -26,8 +26,8 @@ defmodule PhoenixKitPosts.Web.GroupEdit do
   alias Phoenix.Component
 
   alias PhoenixKit.Settings
-  alias PhoenixKit.Utils.Slug
   alias PhoenixKit.Utils.Routes
+  alias PhoenixKit.Utils.Slug
 
   @impl true
   def mount(_params, _session, socket) do

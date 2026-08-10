@@ -24,9 +24,9 @@ defmodule PhoenixKitPosts.Web.Edit do
   import Leaf, only: [leaf_editor: 1]
   alias PhoenixKit.Modules.Storage.URLSigner
   alias PhoenixKit.Settings
-  alias PhoenixKit.Utils.Slug
   alias PhoenixKit.Users.Roles
   alias PhoenixKit.Utils.Routes
+  alias PhoenixKit.Utils.Slug
 
   # `get_editor_mode/0` only exists in newer phoenix_kit builds, but our pin
   # still allows older ones — `default_editor_mode/0` probes for it at runtime,

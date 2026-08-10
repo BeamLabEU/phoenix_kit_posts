@@ -17,7 +17,7 @@ Social posts module for [PhoenixKit](https://github.com/BeamLabEU/phoenix_kit) â
 Add to your parent PhoenixKit app's `mix.exs`:
 
 ```elixir
-{:phoenix_kit_posts, "~> 0.1.0"}
+{:phoenix_kit_posts, "~> 0.2"}
 ```
 
 Run `mix deps.get`. The module appears in the admin panel automatically via PhoenixKit's auto-discovery â€” no additional configuration required.

@@ -1,5 +1,36 @@
 # Changelog
 
+## 0.2.0 - 2026-08-10
+
+### Changed
+
+- **⚠️ Requires `phoenix_kit ~> 2.0`.** The core pin moved to `~> 2.0`, so this
+  release no longer resolves against core 1.7.
+
+  Core 2.0.0 squashes the migration chain into a single `V135` baseline and makes
+  V135 the chain's floor: `mix ecto.migrate` now *refuses* on a database below it
+  rather than migrating. Check `mix phoenix_kit.status` **before** upgrading. A
+  host below V135 must install `phoenix_kit 1.7.236` — the migration bridge, the
+  last release carrying the full pre-squash chain — migrate until the reported
+  version is at least V135, and only then move to 2.0.
+
+  This package does not call migration internals, so the change is the pin
+  itself.
+
+- `phoenix_kit_comments` raised to `~> 0.3` in step: its 0.3.0 is the first
+  release requiring core 2.0, and is a **security release** (stored XSS in
+  comment bodies). See its CHANGELOG.
+
+### Fixed
+
+- **Non-ASCII titles produced an empty slug (PR #15).** Five hand-rolled slug
+  pipelines (`Post`, `PostGroup`, `PostTag`, and the auto-slug paths in
+  `Web.Edit` / `Web.GroupEdit`) stripped every non-ASCII character, so a
+  Cyrillic or Greek title slugged to `""` and German "Größe" lost its umlaut and
+  its ß. All five now call core's `Slug.slugify/2` with `transliterate: true`,
+  which romanizes instead. The empty slug was not merely cosmetic: the edit form
+  read it back as "no slug yet" and regenerated on every subsequent save.
+
 ## 0.1.10 - 2026-07-27
 
 ### Added

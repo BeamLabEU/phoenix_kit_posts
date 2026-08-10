@@ -125,7 +125,13 @@ defmodule PhoenixKitPosts.PostTag do
 
   # Core's rule, not a local copy. The pipeline this replaced stripped every
   # non-ASCII character, so a Cyrillic or Greek title produced an EMPTY slug and
-  # German "Größe" lost its umlaut and its ß. `Slug.slugify/2` romanizes instead,
-  # and takes a locale when the caller knows one.
+  # German "Größe" lost its umlaut and its ß. `Slug.slugify/2` romanizes instead.
+  #
+  # `transliterate: true` is not optional here — core's option DEFAULTS TO
+  # FALSE, and without it the `[^a-z0-9]+` pass reproduces exactly the bug this
+  # replaced. Core's romanization is also not locale-aware: it is a Cyrillic map
+  # plus an NFD combining-mark strip, so "ö" becomes "o" for every language.
+  # `slugify/2` accepts only `:separator` and `:transliterate` — a `:locale`
+  # option would be silently ignored.
   defp slugify(name), do: Slug.slugify(name, transliterate: true)
 end
