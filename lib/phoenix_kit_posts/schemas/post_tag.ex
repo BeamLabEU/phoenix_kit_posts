@@ -127,11 +127,14 @@ defmodule PhoenixKitPosts.PostTag do
   # non-ASCII character, so a Cyrillic or Greek title produced an EMPTY slug and
   # German "Größe" lost its umlaut and its ß. `Slug.slugify/2` romanizes instead.
   #
-  # `transliterate: true` is not optional here — core's option DEFAULTS TO
-  # FALSE, and without it the `[^a-z0-9]+` pass reproduces exactly the bug this
-  # replaced. Core's romanization is also not locale-aware: it is a Cyrillic map
-  # plus an NFD combining-mark strip, so "ö" becomes "o" for every language.
-  # `slugify/2` accepts only `:separator` and `:transliterate` — a `:locale`
-  # option would be silently ignored.
+  # Core 2.0's Slug delegates to `locale_slug` and IS locale-aware — German
+  # expands "ö"/"ß" to "oe"/"ss", Estonian folds them to "o"/"s". No locale is
+  # passed here because these schemas slug a single-language name and have no
+  # language in scope; the result is still correct, just not locale-tuned. Pass
+  # `locale:` from any caller that knows one.
+  #
+  # `transliterate: true` is redundant under core 2.0 (romanization is always on
+  # and the option is accepted-and-ignored for source compatibility), kept so
+  # this reads the same as every other slug site in the umbrella.
   defp slugify(name), do: Slug.slugify(name, transliterate: true)
 end

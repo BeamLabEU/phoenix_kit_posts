@@ -1,5 +1,37 @@
 # Changelog
 
+## 0.2.1 - 2026-08-10
+
+### Changed
+
+- **⚠️ Requires `phoenix_kit ~> 2.0`.** The core pin moved to `~> 2.0`, so this
+  release no longer resolves against core 1.7.
+
+  Core 2.0.0 squashes the migration chain into a single `V135` baseline and makes
+  V135 the chain's floor: `mix ecto.migrate` now *refuses* on a database below it
+  rather than migrating. Check `mix phoenix_kit.status` **before** upgrading. A
+  host below V135 must install `phoenix_kit 1.7.236` — the migration bridge, the
+  last release carrying the full pre-squash chain — migrate until the reported
+  version is at least V135, and only then move to 2.0.
+
+  This package does not call migration internals, so the change is the pin
+  itself.
+
+### Documentation
+
+- **Corrects a wrong comment introduced in 0.2.0.** That release rewrote PR #15's
+  slug comments to claim core's `Slug.slugify/2` has no `:locale` option. True of
+  core **1.7**; core **2.0.0** rewrote `PhoenixKit.Utils.Slug` to delegate to the
+  `locale_slug` package, where `:locale` is fully supported —
+  `Slug.slugify("Größe Fußball", locale: "de")` is `"groesse-fussball"` while
+  `locale: "et"` gives `"grosse-fussball"`. PR #15's original comment was right.
+
+  **No behaviour changes.** These three schemas slug a single-language name with
+  no language in scope, so they pass no locale and never did; slugs are
+  byte-identical. Only the comment was wrong. It now also notes that
+  `:transliterate` is accepted-and-ignored under core 2.0 (romanization is
+  always on), so it is redundant rather than load-bearing.
+
 ## 0.2.0 - 2026-08-10
 
 ### Changed

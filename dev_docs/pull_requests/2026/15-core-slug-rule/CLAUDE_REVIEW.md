@@ -34,15 +34,24 @@ conservative, which costs nothing.)
 
 ## Fixed on `main`
 
-- **The "takes a locale when the caller knows one" comment is wrong** and was
-  repeated in all three schema files. `PhoenixKit.Utils.Slug.slugify/2` reads
-  exactly two options, `:separator` and `:transliterate`; a `:locale` key is
-  silently discarded, and core's romanization is a Cyrillic map plus an NFD
-  combining-mark strip, which is not locale-sensitive by construction — "ö"
-  becomes "o" for every language. This is the same false belief that
-  `phoenix_kit_entities#26` acted on by actually passing the option. Rewrote the
-  comment to state what core does, and to flag that `transliterate: true` is
-  load-bearing rather than decorative.
+- **A comment correction that was itself wrong, corrected again in 0.2.1.** In
+  0.2.0 I rewrote the PR's "takes a locale when the caller knows one" comment to
+  say `slugify/2` has no `:locale` option. That is true of core **1.7** — and the
+  check behind it was run against core 1.7 in a sibling repo before its
+  dependencies had been updated. Core **2.0.0** rewrote `PhoenixKit.Utils.Slug`
+  to delegate to the `locale_slug` package, where `:locale` is fully supported:
+  `Slug.slugify("Größe Fußball", locale: "de")` is `"groesse-fussball"`, and
+  `locale: "et"` gives `"grosse-fussball"`. **The PR's original comment was
+  right.** 0.2.1 restores an accurate version of it.
+
+  No behaviour changed in either direction here — these three schemas slug a
+  single-language name with no language in scope, so they pass no locale and
+  never did. Only the comment was wrong. (`phoenix_kit_entities` did act on the
+  same mistaken belief and had real behaviour reverted; see entities 0.3.1.)
+
+  Also recorded there: `:transliterate` is **ignored** by core 2.0 — romanization
+  is always on, and the option is accepted only so existing call sites keep
+  compiling. So it is redundant here rather than load-bearing.
 - **`mix credo --strict` failed** on three counts of "alias is not
   alphabetically ordered among its group" — the new `alias PhoenixKit.Utils.Slug`
   was inserted above `Routes`/`Roles`/`Date` in `post.ex`, `edit.ex` and
