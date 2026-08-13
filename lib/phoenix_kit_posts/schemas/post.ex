@@ -258,19 +258,45 @@ defmodule PhoenixKitPosts.Post do
     end
   end
 
+  # An absent slug change means "unchanged", not "recompute it from the title".
+  #
+  # Reading `get_change(:slug)` conflated the two, so any save not itself
+  # carrying a new slug re-slugified the title and overwrote a hand-picked one:
+  # publishing, scheduling, unscheduling, drafting — and every ordinary title
+  # edit in the admin UI, because the edit form re-sends the current slug and
+  # `cast/3` drops a value equal to the data, leaving no change to find. A live
+  # URL moved on almost any save, and nothing recorded the old one, so the page
+  # 404'd.
   defp maybe_generate_slug(changeset) do
-    case get_change(changeset, :slug) do
-      nil ->
-        title = get_field(changeset, :title)
+    case fetch_change(changeset, :slug) do
+      # An explicit, non-blank slug from the caller always wins.
+      {:ok, slug} when is_binary(slug) and slug != "" ->
+        changeset
 
-        if title do
-          slug = slugify(title)
-          put_change(changeset, :slug, slug)
+      # Explicitly blanked means "regenerate from the title" — the column is
+      # NOT NULL, so persisting the blank is not an option.
+      {:ok, _blank} ->
+        changeset |> delete_change(:slug) |> put_slug_from(:title)
+
+      # No slug in this changeset: generate only when the record hasn't got one.
+      :error ->
+        if changeset.data.slug in [nil, ""] do
+          put_slug_from(changeset, :title)
         else
           changeset
         end
+    end
+  end
 
-      _slug ->
+  defp put_slug_from(changeset, source) do
+    case get_field(changeset, source) do
+      value when is_binary(value) and value != "" ->
+        case slugify(value) do
+          "" -> changeset
+          slug -> put_change(changeset, :slug, slug)
+        end
+
+      _ ->
         changeset
     end
   end

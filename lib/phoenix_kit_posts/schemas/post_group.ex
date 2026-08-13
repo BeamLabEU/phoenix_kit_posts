@@ -160,19 +160,35 @@ defmodule PhoenixKitPosts.PostGroup do
 
   # Private Functions
 
+  # An absent slug change means "unchanged", not "recompute it from the name" —
+  # see the same fix on `PhoenixKitPosts.Post`. Renaming a group used to move
+  # its slug, and any save that carried no slug of its own did the same.
   defp maybe_generate_slug(changeset) do
-    case get_change(changeset, :slug) do
-      nil ->
-        name = get_field(changeset, :name)
+    case fetch_change(changeset, :slug) do
+      {:ok, slug} when is_binary(slug) and slug != "" ->
+        changeset
 
-        if name do
-          slug = slugify(name)
-          put_change(changeset, :slug, slug)
+      {:ok, _blank} ->
+        changeset |> delete_change(:slug) |> put_slug_from(:name)
+
+      :error ->
+        if changeset.data.slug in [nil, ""] do
+          put_slug_from(changeset, :name)
         else
           changeset
         end
+    end
+  end
 
-      _slug ->
+  defp put_slug_from(changeset, source) do
+    case get_field(changeset, source) do
+      value when is_binary(value) and value != "" ->
+        case slugify(value) do
+          "" -> changeset
+          slug -> put_change(changeset, :slug, slug)
+        end
+
+      _ ->
         changeset
     end
   end
