@@ -76,6 +76,7 @@ defmodule PhoenixKitPosts.Post do
   use Ecto.Schema
   use PhoenixKit.SchemaPrefix
   import Ecto.Changeset
+  import Ecto.Query, only: [from: 2]
 
   alias PhoenixKit.Utils.Date, as: UtilsDate
   alias PhoenixKit.Utils.Slug
@@ -293,12 +294,42 @@ defmodule PhoenixKitPosts.Post do
       value when is_binary(value) and value != "" ->
         case slugify(value) do
           "" -> changeset
-          slug -> put_change(changeset, :slug, slug)
+          slug -> put_change(changeset, :slug, unique_slug(slug, changeset.data.uuid))
         end
 
       _ ->
         changeset
     end
+  end
+
+  # Two posts titled the same slugified identically, so nothing stopped
+  # duplicate slugs from being created — and `get_post_by_slug/2` fetches with
+  # `repo().one()`, which raises `Ecto.MultipleResultsError` the moment there
+  # are two. Core's `Slug.ensure_unique/2` is the house rule: suffix -2, -3, …
+  # until free. Romanization is lossy in every language, so collisions are
+  # normal rather than exceptional and the suffix is the answer, not a better
+  # transliteration table.
+  #
+  # The check is a query from a changeset, which is unusual but deliberate: it
+  # is the same thing `Ecto.Changeset.unsafe_validate_unique/4` does, and the
+  # alternative — generating in the schema and uniquifying in the context —
+  # splits one decision across two modules. It stays advisory: a concurrent
+  # insert between this probe and the write is still possible, which is what
+  # the database's own unique index is for.
+  defp unique_slug(slug, own_uuid) do
+    Slug.ensure_unique(slug, fn candidate ->
+      query = from(p in __MODULE__, where: p.slug == ^candidate)
+
+      query =
+        if own_uuid, do: from(p in query, where: p.uuid != ^own_uuid), else: query
+
+      PhoenixKit.RepoHelper.repo().exists?(query)
+    end)
+  rescue
+    # No repo configured, or it is unreachable. Slug generation is not the
+    # place to take an application down, and the unsuffixed slug is what this
+    # produced before uniqueness was considered at all.
+    _ -> slug
   end
 
   # Core's rule, not a local copy. The pipeline this replaced stripped every
