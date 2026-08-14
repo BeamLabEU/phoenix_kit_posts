@@ -1,5 +1,60 @@
 # Changelog
 
+## 0.3.0 - 2026-08-14
+
+### Fixed
+
+- **Publishing or editing a post rewrote a slug the author had chosen, moving a
+  live URL.** `maybe_generate_slug/1` asked `get_change(:slug)`, which is `nil`
+  both when the caller left the slug alone and when the record hasn't got one —
+  so any save carrying no slug of its own re-derived it from the title, and the
+  old slug was recorded nowhere. The admin edit form makes this ordinary rather
+  than exotic: it repopulates `"slug" => post.slug`, and `cast/3` drops a value
+  equal to the data, so it arrives looking identical to no slug at all.
+  `fetch_change/2` separates the two. `PostTag` and `PostGroup` carried the same
+  helper against `:name` and are fixed with it (#17).
+
+- **Two callers could both publish the same scheduled post, and both log it.**
+  The guard read `post.status` — the copy in the caller's hand — so two callers
+  each holding a struct that still said `"scheduled"` both believed they had made
+  the transition, writing two activity rows and two broadcasts. **Two callers is
+  the normal case:** `process_scheduled_posts/0` runs from this module's cron
+  worker *and* from core's `ProcessScheduledJobsWorker` catch-up, on separate
+  schedules in separate queues — no cluster or unlucky timing required.
+
+  The predicate now lives in the `WHERE` of a single `update_all`, so the
+  database settles it. The loser is reloaded and returned `{:ok, current}` rather
+  than an error, because `scheduled_post_handler.ex` turns `{:error, _}` into a
+  permanently failed job and a no-op is not a failure.
+
+- **The test harness could not reach a database on a role without `CREATEDB`,
+  and reported success anyway.** `config/test.exs` hardcoded the database name
+  and read no `PGDATABASE`, unlike every sibling module and core. Where the
+  database was unreachable, `test_helper.exs` excluded all 18 `:integration`
+  tests — which is where the slug and atomic-publish regressions live — and the
+  run still exited 0. `PGDATABASE`/`PGPOOL` are now honoured, with the previous
+  name as the fallback so CI is unaffected.
+
+### Added
+
+- **A database test harness.** `test_helper.exs` was `ExUnit.start()` and
+  `config/test.exs` configured no repo, so nothing in the context layer could be
+  exercised. That was not a neutral gap: every context function here rescues its
+  own DB errors and returns a plausible nothing, so a repo-less suite did not
+  fail — it passed while asserting the rescue. Posts tables come from core's
+  versioned chain, so the schema is built by `PhoenixKit.Migration.ensure_current/2`,
+  the same call a host makes.
+
+### Changed
+
+- **`publish_post/2` takes `:only_if`** — the statuses it may publish *from*. It
+  defaults wide, because the admin Publish button legitimately publishes a draft;
+  the scheduled sweep and the Oban handler pass `["scheduled"]` so a post the
+  author has since moved back to draft is not published by a retry.
+- Dependency updates: `phoenix_kit` 2.4.0. The `~> 2.0` pin is unchanged — this
+  release keeps its local slug helper and calls `Slug.ensure_unique/2`, which has
+  existed since core 2.0, rather than adopting core 2.4.0's new `put_slug/3`.
+
 ## 0.2.2 - 2026-08-11
 
 ### Changed
