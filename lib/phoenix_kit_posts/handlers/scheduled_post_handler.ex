@@ -53,7 +53,10 @@ defmodule PhoenixKitPosts.ScheduledPostHandler do
           "ScheduledPostHandler: Found post with status=#{post.status}, title=#{post.title}"
         )
 
-        case PhoenixKitPosts.publish_post(post) do
+        # Narrowed to the transition this job exists to perform. If the author
+        # has moved the post back to draft since it was scheduled, a retry of
+        # this job must not publish it regardless.
+        case PhoenixKitPosts.publish_post(post, only_if: ["scheduled"]) do
           {:ok, published_post} ->
             Logger.info(
               "ScheduledPostHandler: Successfully published post #{post_uuid}, new status=#{published_post.status}"

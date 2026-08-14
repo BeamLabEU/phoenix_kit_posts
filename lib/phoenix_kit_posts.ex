@@ -564,10 +564,21 @@ defmodule PhoenixKitPosts do
   # Publishing Operations
   # ============================================================================
 
+  @statuses_publishable_from ~w(draft scheduled unlisted)
+
   @doc """
   Publishes a post (makes it public).
 
-  Sets status to "public" and published_at to current time.
+  Sets status to "public" and published_at to current time. Always returns
+  `{:ok, post}` for a post that is public afterwards, whether this call is what
+  made it so or not.
+
+  ## Options
+
+    * `:only_if` — statuses this call may publish *from*, defaulting to
+      `#{inspect(@statuses_publishable_from)}`. The scheduled paths narrow it to
+      `["scheduled"]` so a post an author has since moved back to draft is not
+      published by a sweep or an Oban retry.
 
   ## Examples
 
@@ -575,21 +586,61 @@ defmodule PhoenixKitPosts do
       {:ok, %Post{status: "public"}}
   """
   def publish_post(%Post{} = post, opts \\ []) do
-    result =
-      update_post(post, %{
-        status: "public",
-        published_at: UtilsDate.utc_now()
-      })
-
-    # Only log a publish event on a genuine transition to public. `publish_post`
-    # is idempotent (the scheduled handler may re-invoke it, e.g. on an Oban
-    # retry), so guarding on the prior status avoids duplicate feed entries.
-    with {:ok, published} <- result,
-         false <- post.status == "public" do
-      log_post_activity("post.published", published.uuid, published.title, post_actor(post, opts))
+    case transition_to_public(post, opts) do
+      {:published, published} -> {:ok, published}
+      {:noop, current} -> {:ok, current}
+      {:error, reason} -> {:error, reason}
     end
+  end
 
-    result
+  # Single-statement compare-and-swap, so exactly one caller wins the
+  # transition no matter how many hold the same stale struct.
+  #
+  # The guard used to read `post.status` — the in-memory copy. Two callers each
+  # holding a struct that still said "scheduled" therefore both believed they
+  # had made the transition and both logged it, and there are two of them by
+  # design: `process_scheduled_posts/0` runs from this module's own cron worker
+  # AND from core's `ProcessScheduledJobsWorker` catch-up. Moving the predicate
+  # into the WHERE makes the database settle it.
+  #
+  # Built on `Post` rather than raw SQL so `use PhoenixKit.SchemaPrefix` keeps
+  # targeting the installed schema on a prefixed install.
+  defp transition_to_public(%Post{} = post, opts) do
+    from_statuses = opts |> Keyword.get(:only_if, @statuses_publishable_from) |> List.wrap()
+    now = UtilsDate.utc_now()
+
+    query =
+      from(p in Post,
+        where: p.uuid == ^post.uuid,
+        where: p.status in ^from_statuses,
+        select: p
+      )
+
+    # `update_all` does not run changesets, so `updated_at` is set by hand.
+    # Nothing else is lost: the touched fields are literals, `validate_*` has
+    # nothing to say about them, and going around `Post.changeset/2` is also
+    # what stops publishing from regenerating the slug.
+    case repo().update_all(query, set: [status: "public", published_at: now, updated_at: now]) do
+      {1, [published]} ->
+        log_post_activity(
+          "post.published",
+          published.uuid,
+          published.title,
+          post_actor(post, opts)
+        )
+
+        {:published, published}
+
+      {0, _} ->
+        # Lost the race, or the post left the publishable set. Never an error:
+        # the scheduled handler turns {:error, _} into a failed job, and a
+        # no-op is not a failure. Reloaded rather than echoing the caller's
+        # struct, which still carries the pre-publish status.
+        case repo().get(Post, post.uuid) do
+          nil -> {:error, :not_found}
+          current -> {:noop, current}
+        end
+    end
   end
 
   @doc """
@@ -735,8 +786,17 @@ defmodule PhoenixKitPosts do
       )
       |> repo().all(log: false)
 
-    results = Enum.map(posts_to_publish, &publish_post/1)
-    published_count = Enum.count(results, &match?({:ok, _}, &1))
+    # Counting `{:ok, _}` would count the losers too, since a post another
+    # sweep just published still returns {:ok, _} — correct for the caller,
+    # wrong for a tally of what this run did. Only a winner is counted.
+    #
+    # `only_if: ["scheduled"]` narrows the transition to the reason this sweep
+    # exists. A post moved back to draft between the select above and the
+    # update must not be published by it.
+    published_count =
+      Enum.count(posts_to_publish, fn post ->
+        match?({:published, _}, transition_to_public(post, only_if: ["scheduled"]))
+      end)
 
     {:ok, published_count}
   end

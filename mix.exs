@@ -60,10 +60,25 @@ defmodule PhoenixKitPosts.MixProject do
     ]
   end
 
+  # Swaps a Hex pin for a local checkout when PHOENIX_KIT_PATH is set, so this
+  # module's suite can run against uncommitted core without publishing it.
+  # Unset means the published pin, so `mix hex.publish` and CI are unaffected.
+  defp pk_dep(app, requirement, opts \\ []) do
+    env_var = String.upcase(Atom.to_string(app)) <> "_PATH"
+
+    case System.get_env(env_var) do
+      nil when opts == [] -> {app, requirement}
+      nil -> {app, requirement, opts}
+      path -> {app, [path: path, override: true] ++ opts}
+    end
+  end
+
   defp deps do
     [
-      # PhoenixKit provides the Module behaviour and Settings API.
-      {:phoenix_kit, "~> 2.0"},
+      # PhoenixKit provides the Module behaviour and Settings API — and the
+      # migration chain that builds this module's tables, which is why the
+      # integration suite cares which core resolves here.
+      pk_dep(:phoenix_kit, "~> 2.0"),
       # Comments module for post detail page comments section. 0.2.6 is the
       # floor: `Web.Details` does `use PhoenixKitComments.Embed`, which that
       # release first published. The `use` is unguarded, so 0.2.0–0.2.5 fails
