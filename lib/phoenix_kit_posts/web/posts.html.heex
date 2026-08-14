@@ -46,25 +46,25 @@
     <div class="bg-base-200 rounded-lg p-6 mb-6">
       <.form for={%{}} phx-change="filter" class="space-y-4">
         <%!-- Search Bar --%>
-        <div class="form-control">
+        <div class="fieldset">
           <label class="label">
-            <span class="label-text font-semibold">Search</span>
+            <span class="fieldset-legend font-semibold">Search</span>
           </label>
           <input
             type="text"
             name="search[query]"
             value={@search_query}
             placeholder="Search titles and content..."
-            class="input input-bordered w-full"
+            class="input w-full"
           />
         </div>
 
         <%!-- Filter Row --%>
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
           <%!-- Type Filter --%>
-          <div class="form-control">
+          <div class="fieldset">
             <label class="label">
-              <span class="label-text">Type</span>
+              <span class="fieldset-legend">Type</span>
             </label>
             <label class="select w-full">
               <select name="filter[type]">
@@ -77,9 +77,9 @@
           </div>
 
           <%!-- Status Filter --%>
-          <div class="form-control">
+          <div class="fieldset">
             <label class="label">
-              <span class="label-text">Status</span>
+              <span class="fieldset-legend">Status</span>
             </label>
             <label class="select w-full">
               <select name="filter[status]">
@@ -95,9 +95,9 @@
           </div>
 
           <%!-- Group Filter --%>
-          <div class="form-control">
+          <div class="fieldset">
             <label class="label">
-              <span class="label-text">Group</span>
+              <span class="fieldset-legend">Group</span>
             </label>
             <label class="select w-full">
               <select name="filter[group]">
@@ -112,9 +112,9 @@
           </div>
 
           <%!-- Tag Filter --%>
-          <div class="form-control">
+          <div class="fieldset">
             <label class="label">
-              <span class="label-text">Tag</span>
+              <span class="fieldset-legend">Tag</span>
             </label>
             <label class="select w-full">
               <select name="filter[tag]">

@@ -11,9 +11,9 @@
     <%!-- Search Bar --%>
     <div class="bg-base-200 rounded-lg p-6 mb-6">
       <.form for={%{}} phx-change="search" class="space-y-4">
-        <div class="form-control">
+        <div class="fieldset">
           <label class="label">
-            <span class="label-text font-semibold">Search Groups</span>
+            <span class="fieldset-legend font-semibold">Search Groups</span>
           </label>
           <div class="input-group">
             <input
@@ -21,7 +21,7 @@
               name="search[query]"
               value={@search_query}
               placeholder="Search by name or description..."
-              class="input input-bordered w-full"
+              class="input w-full"
             />
             <%= if @search_query != "" do %>
               <button

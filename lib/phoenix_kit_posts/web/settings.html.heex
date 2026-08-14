@@ -16,49 +16,49 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
           <%!-- Max Media --%>
-          <div class="form-control w-full">
+          <div class="fieldset w-full">
             <label class="label">
-              <span class="label-text text-base font-medium">{gettext("Max Media Per Post")}</span>
+              <span class="fieldset-legend text-base font-medium">{gettext("Max Media Per Post")}</span>
             </label>
             <input
               name="settings[posts_max_media]"
               type="number"
               value={@posts_max_media}
-              class="input input-bordered w-full focus:input-primary"
+              class="input w-full focus:input-primary"
               min="0"
               max="50"
             />
             <div class="label">
-              <span class="label-text-alt text-xs text-base-content/50">
+              <span class="fieldset-label text-xs text-base-content/50">
                 {gettext("Maximum number of images/media files per post (0-50)")}
               </span>
             </div>
           </div>
 
           <%!-- Max Title Length --%>
-          <div class="form-control w-full">
+          <div class="fieldset w-full">
             <label class="label">
-              <span class="label-text text-base font-medium">{gettext("Max Title Length")}</span>
+              <span class="fieldset-legend text-base font-medium">{gettext("Max Title Length")}</span>
             </label>
             <input
               name="settings[posts_max_title_length]"
               type="number"
               value={@posts_max_title_length}
-              class="input input-bordered w-full focus:input-primary"
+              class="input w-full focus:input-primary"
               min="10"
               max="500"
             />
             <div class="label">
-              <span class="label-text-alt text-xs text-base-content/50">
+              <span class="fieldset-label text-xs text-base-content/50">
                 {gettext("Maximum characters for post title (10-500)")}
               </span>
             </div>
           </div>
 
           <%!-- Max Subtitle Length --%>
-          <div class="form-control w-full">
+          <div class="fieldset w-full">
             <label class="label">
-              <span class="label-text text-base font-medium">
+              <span class="fieldset-legend text-base font-medium">
                 {gettext("Max Subtitle Length")}
               </span>
             </label>
@@ -66,72 +66,72 @@
               name="settings[posts_max_subtitle_length]"
               type="number"
               value={@posts_max_subtitle_length}
-              class="input input-bordered w-full focus:input-primary"
+              class="input w-full focus:input-primary"
               min="10"
               max="1000"
             />
             <div class="label">
-              <span class="label-text-alt text-xs text-base-content/50">
+              <span class="fieldset-label text-xs text-base-content/50">
                 {gettext("Maximum characters for post subtitle/tagline (10-1000)")}
               </span>
             </div>
           </div>
 
           <%!-- Max Content Length --%>
-          <div class="form-control w-full">
+          <div class="fieldset w-full">
             <label class="label">
-              <span class="label-text text-base font-medium">{gettext("Max Content Length")}</span>
+              <span class="fieldset-legend text-base font-medium">{gettext("Max Content Length")}</span>
             </label>
             <input
               name="settings[posts_max_content_length]"
               type="number"
               value={@posts_max_content_length}
-              class="input input-bordered w-full focus:input-primary"
+              class="input w-full focus:input-primary"
               min="100"
               max="100000"
             />
             <div class="label">
-              <span class="label-text-alt text-xs text-base-content/50">
+              <span class="fieldset-label text-xs text-base-content/50">
                 {gettext("Maximum characters for post content (100-100000)")}
               </span>
             </div>
           </div>
 
           <%!-- Max Mentions --%>
-          <div class="form-control w-full">
+          <div class="fieldset w-full">
             <label class="label">
-              <span class="label-text text-base font-medium">{gettext("Max Mentions")}</span>
+              <span class="fieldset-legend text-base font-medium">{gettext("Max Mentions")}</span>
             </label>
             <input
               name="settings[posts_max_mentions]"
               type="number"
               value={@posts_max_mentions}
-              class="input input-bordered w-full focus:input-primary"
+              class="input w-full focus:input-primary"
               min="0"
               max="50"
             />
             <div class="label">
-              <span class="label-text-alt text-xs text-base-content/50">
+              <span class="fieldset-label text-xs text-base-content/50">
                 {gettext("Maximum user mentions per post (0-50)")}
               </span>
             </div>
           </div>
 
           <%!-- Max Tags --%>
-          <div class="form-control w-full">
+          <div class="fieldset w-full">
             <label class="label">
-              <span class="label-text text-base font-medium">{gettext("Max Tags")}</span>
+              <span class="fieldset-legend text-base font-medium">{gettext("Max Tags")}</span>
             </label>
             <input
               name="settings[posts_max_tags]"
               type="number"
               value={@posts_max_tags}
-              class="input input-bordered w-full focus:input-primary"
+              class="input w-full focus:input-primary"
               min="0"
               max="100"
             />
             <div class="label">
-              <span class="label-text-alt text-xs text-base-content/50">
+              <span class="fieldset-label text-xs text-base-content/50">
                 {gettext("Maximum hashtags per post (0-100)")}
               </span>
             </div>
@@ -142,29 +142,29 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
           <%!-- Posts Per Page --%>
-          <div class="form-control w-full">
+          <div class="fieldset w-full">
             <label class="label">
-              <span class="label-text text-base font-medium">{gettext("Posts Per Page")}</span>
+              <span class="fieldset-legend text-base font-medium">{gettext("Posts Per Page")}</span>
             </label>
             <input
               name="settings[posts_per_page]"
               type="number"
               value={@posts_per_page}
-              class="input input-bordered w-full focus:input-primary"
+              class="input w-full focus:input-primary"
               min="5"
               max="100"
             />
             <div class="label">
-              <span class="label-text-alt text-xs text-base-content/50">
+              <span class="fieldset-label text-xs text-base-content/50">
                 {gettext("Number of posts to display per page (5-100)")}
               </span>
             </div>
           </div>
 
           <%!-- Default Status --%>
-          <div class="form-control w-full">
+          <div class="fieldset w-full">
             <label class="label">
-              <span class="label-text text-base font-medium">{gettext("Default Post Status")}</span>
+              <span class="fieldset-legend text-base font-medium">{gettext("Default Post Status")}</span>
             </label>
             <label class="select w-full focus:select-primary">
               <select name="settings[posts_default_status]">
@@ -180,7 +180,7 @@
               </select>
             </label>
             <div class="label">
-              <span class="label-text-alt text-xs text-base-content/50">
+              <span class="fieldset-label text-xs text-base-content/50">
                 {gettext("Default visibility status for new posts")}
               </span>
             </div>
@@ -191,7 +191,7 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
           <%!-- Likes Enabled --%>
-          <div class="form-control w-full">
+          <div class="fieldset w-full">
             <label class="label cursor-pointer justify-start gap-4">
               <input type="hidden" name="settings[posts_likes_enabled]" value="false" />
               <input
@@ -201,17 +201,17 @@
                 class="toggle toggle-primary"
                 checked={@posts_likes_enabled == "true"}
               />
-              <span class="label-text font-medium">{gettext("Enable Likes")}</span>
+              <span class="fieldset-legend font-medium">{gettext("Enable Likes")}</span>
             </label>
             <div class="label pt-0">
-              <span class="label-text-alt text-xs text-base-content/50">
+              <span class="fieldset-label text-xs text-base-content/50">
                 {gettext("Allow users to like/favorite posts")}
               </span>
             </div>
           </div>
 
           <%!-- Allow Scheduling --%>
-          <div class="form-control w-full">
+          <div class="fieldset w-full">
             <label class="label cursor-pointer justify-start gap-4">
               <input type="hidden" name="settings[posts_allow_scheduling]" value="false" />
               <input
@@ -221,17 +221,17 @@
                 class="toggle toggle-primary"
                 checked={@posts_allow_scheduling == "true"}
               />
-              <span class="label-text font-medium">{gettext("Allow Scheduling")}</span>
+              <span class="fieldset-legend font-medium">{gettext("Allow Scheduling")}</span>
             </label>
             <div class="label pt-0">
-              <span class="label-text-alt text-xs text-base-content/50">
+              <span class="fieldset-label text-xs text-base-content/50">
                 {gettext("Enable scheduling posts for future publication")}
               </span>
             </div>
           </div>
 
           <%!-- Allow Groups --%>
-          <div class="form-control w-full">
+          <div class="fieldset w-full">
             <label class="label cursor-pointer justify-start gap-4">
               <input type="hidden" name="settings[posts_allow_groups]" value="false" />
               <input
@@ -241,17 +241,17 @@
                 class="toggle toggle-primary"
                 checked={@posts_allow_groups == "true"}
               />
-              <span class="label-text font-medium">{gettext("Allow Groups")}</span>
+              <span class="fieldset-legend font-medium">{gettext("Allow Groups")}</span>
             </label>
             <div class="label pt-0">
-              <span class="label-text-alt text-xs text-base-content/50">
+              <span class="fieldset-label text-xs text-base-content/50">
                 {gettext("Enable user-specific post collections (Pinterest-style)")}
               </span>
             </div>
           </div>
 
           <%!-- Allow Reposts --%>
-          <div class="form-control w-full">
+          <div class="fieldset w-full">
             <label class="label cursor-pointer justify-start gap-4">
               <input type="hidden" name="settings[posts_allow_reposts]" value="false" />
               <input
@@ -261,17 +261,17 @@
                 class="toggle toggle-primary"
                 checked={@posts_allow_reposts == "true"}
               />
-              <span class="label-text font-medium">{gettext("Allow Reposts")}</span>
+              <span class="fieldset-legend font-medium">{gettext("Allow Reposts")}</span>
             </label>
             <div class="label pt-0">
-              <span class="label-text-alt text-xs text-base-content/50">
+              <span class="fieldset-label text-xs text-base-content/50">
                 {gettext("Enable sharing/reposting of other users' posts")}
               </span>
             </div>
           </div>
 
           <%!-- SEO Auto Slug --%>
-          <div class="form-control w-full">
+          <div class="fieldset w-full">
             <label class="label cursor-pointer justify-start gap-4">
               <input type="hidden" name="settings[posts_seo_auto_slug]" value="false" />
               <input
@@ -281,17 +281,17 @@
                 class="toggle toggle-primary"
                 checked={@posts_seo_auto_slug == "true"}
               />
-              <span class="label-text font-medium">{gettext("Auto-generate SEO Slugs")}</span>
+              <span class="fieldset-legend font-medium">{gettext("Auto-generate SEO Slugs")}</span>
             </label>
             <div class="label pt-0">
-              <span class="label-text-alt text-xs text-base-content/50">
+              <span class="fieldset-label text-xs text-base-content/50">
                 {gettext("Automatically create URL-friendly slugs from post titles")}
               </span>
             </div>
           </div>
 
           <%!-- Show View Count --%>
-          <div class="form-control w-full">
+          <div class="fieldset w-full">
             <label class="label cursor-pointer justify-start gap-4">
               <input type="hidden" name="settings[posts_show_view_count]" value="false" />
               <input
@@ -301,10 +301,10 @@
                 class="toggle toggle-primary"
                 checked={@posts_show_view_count == "true"}
               />
-              <span class="label-text font-medium">{gettext("Show View Count")}</span>
+              <span class="fieldset-legend font-medium">{gettext("Show View Count")}</span>
             </label>
             <div class="label pt-0">
-              <span class="label-text-alt text-xs text-base-content/50">
+              <span class="fieldset-label text-xs text-base-content/50">
                 {gettext("Display view counter on posts")}
               </span>
             </div>
@@ -314,7 +314,7 @@
         <.settings_section_header icon="hero-shield-check" title={gettext("Moderation")} />
 
         <%!-- Require Approval --%>
-        <div class="form-control w-full">
+        <div class="fieldset w-full">
           <label class="label cursor-pointer justify-start gap-4">
             <input type="hidden" name="settings[posts_require_approval]" value="false" />
             <input
@@ -324,10 +324,10 @@
               class="toggle toggle-warning"
               checked={@posts_require_approval == "true"}
             />
-            <span class="label-text font-medium">{gettext("Require Post Approval")}</span>
+            <span class="fieldset-legend font-medium">{gettext("Require Post Approval")}</span>
           </label>
           <div class="label pt-0">
-            <span class="label-text-alt text-xs text-base-content/50">
+            <span class="fieldset-label text-xs text-base-content/50">
               {gettext("All new posts must be approved by an admin before going public")}
             </span>
           </div>

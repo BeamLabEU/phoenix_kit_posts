@@ -29,10 +29,10 @@
 
               <div class="space-y-4">
                 <%!-- Title --%>
-                <div class="form-control">
+                <div class="fieldset">
                   <label class="label">
-                    <span class="label-text font-medium">Title *</span>
-                    <span class="label-text-alt">
+                    <span class="fieldset-legend font-medium">Title *</span>
+                    <span class="fieldset-label">
                       {String.length(@form[:title].value || "")}/{@max_title_length}
                     </span>
                   </label>
@@ -46,10 +46,10 @@
                 </div>
 
                 <%!-- Subtitle --%>
-                <div class="form-control">
+                <div class="fieldset">
                   <label class="label">
-                    <span class="label-text font-medium">Subtitle / Tagline</span>
-                    <span class="label-text-alt">
+                    <span class="fieldset-legend font-medium">Subtitle / Tagline</span>
+                    <span class="fieldset-label">
                       {String.length(@form[:sub_title].value || "")}/{@max_subtitle_length}
                     </span>
                   </label>
@@ -65,10 +65,10 @@
                      Picker + drag-reorder + featured badge + lightbox are all
                      handled inside the component; the parent only reacts to the
                      {MediaGallery, id, {:changed, uuids}} message it emits. --%>
-                <div class="form-control">
+                <div class="fieldset">
                   <label class="label">
-                    <span class="label-text font-medium">Media</span>
-                    <span class="label-text-alt">{length(@post_images)}</span>
+                    <span class="fieldset-legend font-medium">Media</span>
+                    <span class="fieldset-label">{length(@post_images)}</span>
                   </label>
 
                   <.live_component
@@ -83,17 +83,17 @@
                   />
 
                   <label class="label">
-                    <span class="label-text-alt text-base-content/70">
+                    <span class="fieldset-label text-base-content/70">
                       Drag to reorder. First image is the featured image.
                     </span>
                   </label>
                 </div>
 
                 <%!-- Content --%>
-                <div class="form-control">
+                <div class="fieldset">
                   <label class="label">
-                    <span class="label-text font-medium">Content *</span>
-                    <span class="label-text-alt">
+                    <span class="fieldset-legend font-medium">Content *</span>
+                    <span class="fieldset-label">
                       {String.length(@content)}/{@max_content_length}
                     </span>
                   </label>
@@ -107,16 +107,16 @@
                     toolbar={[:image, :video]}
                   />
                   <label class="label">
-                    <span class="label-text-alt text-base-content/70">
+                    <span class="fieldset-label text-base-content/70">
                       Use #hashtags in your content for automatic tag extraction
                     </span>
                   </label>
                 </div>
 
                 <%!-- SEO Slug --%>
-                <div class="form-control">
+                <div class="fieldset">
                   <label class="label">
-                    <span class="label-text font-medium">SEO Slug</span>
+                    <span class="fieldset-legend font-medium">SEO Slug</span>
                   </label>
                   <.input
                     field={@form[:slug]}
@@ -129,7 +129,7 @@
                     disabled={@seo_auto_slug}
                   />
                   <label class="label">
-                    <span class="label-text-alt text-base-content/70">
+                    <span class="fieldset-label text-base-content/70">
                       <%= if @seo_auto_slug do %>
                         Auto-generation enabled. URL slug will be created from title.
                       <% else %>
@@ -151,7 +151,7 @@
                 </h2>
 
                 <%= if length(@user_groups) > 0 do %>
-                  <div class="form-control">
+                  <div class="fieldset">
                     <div class="space-y-2">
                       <%= for group <- @user_groups do %>
                         <label class="label cursor-pointer justify-start gap-3">
@@ -162,7 +162,7 @@
                             checked={group.uuid in @selected_groups}
                             class="checkbox checkbox-primary"
                           />
-                          <span class="label-text">
+                          <span class="fieldset-legend">
                             <span class="font-semibold">{group.name}</span>
                             <%= if group.description do %>
                               <span class="text-sm text-base-content/60">
@@ -174,7 +174,7 @@
                       <% end %>
                     </div>
                     <label class="label">
-                      <span class="label-text-alt text-base-content/70">
+                      <span class="fieldset-label text-base-content/70">
                         Organize posts into your personal collections
                       </span>
                     </label>
@@ -223,10 +223,10 @@
               <% end %>
 
               <%!-- Manual Tag Input --%>
-              <div class="form-control">
+              <div class="fieldset">
                 <label class="label">
-                  <span class="label-text font-medium">Add Tag Manually</span>
-                  <span class="label-text-alt">
+                  <span class="fieldset-legend font-medium">Add Tag Manually</span>
+                  <span class="fieldset-label">
                     {length(@selected_tags)}/{@max_tags} tags
                   </span>
                 </label>
@@ -236,13 +236,13 @@
                     type="text"
                     id="tag-input"
                     placeholder="Enter tag and press Enter"
-                    class="input input-bordered w-full"
+                    class="input w-full"
                     phx-keydown="add_tag"
                     phx-key="Enter"
                   />
                 </div>
                 <label class="label">
-                  <span class="label-text-alt text-base-content/70">
+                  <span class="fieldset-label text-base-content/70">
                     Tags are automatically extracted from #hashtags in content
                   </span>
                 </label>
@@ -321,9 +321,9 @@
 
               <div class="space-y-4">
                 <%!-- Type --%>
-                <div class="form-control">
+                <div class="fieldset">
                   <label class="label">
-                    <span class="label-text font-medium">Post Type</span>
+                    <span class="fieldset-legend font-medium">Post Type</span>
                   </label>
                   <.select
                     field={@form[:type]}
@@ -334,16 +334,16 @@
                     ]}
                   />
                   <label class="label">
-                    <span class="label-text-alt text-base-content/70">
+                    <span class="fieldset-label text-base-content/70">
                       Different types have different display layouts
                     </span>
                   </label>
                 </div>
 
                 <%!-- Status --%>
-                <div class="form-control">
+                <div class="fieldset">
                   <label class="label">
-                    <span class="label-text font-medium">Status</span>
+                    <span class="fieldset-legend font-medium">Status</span>
                   </label>
                   <.select
                     field={@form[:status]}
@@ -355,7 +355,7 @@
                     ]}
                   />
                   <label class="label">
-                    <span class="label-text-alt text-base-content/70">
+                    <span class="fieldset-label text-base-content/70">
                       Control post visibility
                     </span>
                   </label>
@@ -363,9 +363,9 @@
 
                 <%!-- Scheduled Date (only show if status is scheduled) --%>
                 <%= if @allow_scheduling and @form[:status].value == "scheduled" do %>
-                  <div class="form-control">
+                  <div class="fieldset">
                     <label class="label">
-                      <span class="label-text font-medium">Scheduled Publish Time</span>
+                      <span class="fieldset-legend font-medium">Scheduled Publish Time</span>
                     </label>
                     <.input
                       field={@form[:scheduled_at]}
@@ -373,7 +373,7 @@
                       required={@form[:status].value == "scheduled"}
                     />
                     <label class="label">
-                      <span class="label-text-alt text-base-content/70">
+                      <span class="fieldset-label text-base-content/70">
                         Post will be published at this time
                       </span>
                     </label>

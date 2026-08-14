@@ -23,9 +23,9 @@
             class="space-y-6"
           >
             <%!-- Group Name --%>
-            <div class="form-control">
+            <div class="fieldset">
               <label class="label">
-                <span class="label-text font-medium">Group Name *</span>
+                <span class="fieldset-legend font-medium">Group Name *</span>
               </label>
               <.input
                 field={@form[:name]}
@@ -34,16 +34,16 @@
                 required
               />
               <label class="label">
-                <span class="label-text-alt text-base-content/70">
+                <span class="fieldset-label text-base-content/70">
                   A descriptive name for this collection
                 </span>
               </label>
             </div>
 
             <%!-- Description --%>
-            <div class="form-control">
+            <div class="fieldset">
               <label class="label">
-                <span class="label-text font-medium">Description</span>
+                <span class="fieldset-legend font-medium">Description</span>
               </label>
               <.textarea
                 field={@form[:description]}
@@ -51,16 +51,16 @@
                 rows="3"
               />
               <label class="label">
-                <span class="label-text-alt text-base-content/70">
+                <span class="fieldset-label text-base-content/70">
                   Help yourself remember what this group is for
                 </span>
               </label>
             </div>
 
             <%!-- Slug --%>
-            <div class="form-control">
+            <div class="fieldset">
               <label class="label">
-                <span class="label-text font-medium">URL Slug *</span>
+                <span class="fieldset-legend font-medium">URL Slug *</span>
               </label>
               <.input
                 field={@form[:slug]}
@@ -69,7 +69,7 @@
                 required
               />
               <label class="label">
-                <span class="label-text-alt text-base-content/70">
+                <span class="fieldset-label text-base-content/70">
                   URL-friendly identifier. Leave empty to auto-generate from name.
                 </span>
               </label>
@@ -97,9 +97,9 @@
             </div>
 
             <%!-- Visibility --%>
-            <div class="form-control">
+            <div class="fieldset">
               <label class="label">
-                <span class="label-text font-medium">Visibility</span>
+                <span class="fieldset-legend font-medium">Visibility</span>
               </label>
               <.select
                 field={@form[:visibility]}
@@ -109,7 +109,7 @@
                 ]}
               />
               <label class="label">
-                <span class="label-text-alt text-base-content/70">
+                <span class="fieldset-label text-base-content/70">
                   Control who can see this group and its posts
                 </span>
               </label>
