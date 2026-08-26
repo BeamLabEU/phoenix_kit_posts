@@ -24,6 +24,7 @@ defmodule PhoenixKitPosts.Web.Edit do
   # this line would still bind to core's backend.
   use Gettext, backend: PhoenixKitPosts.Gettext
 
+  alias Leaf
   alias Phoenix.Component
 
   import Leaf, only: [leaf_editor: 1]
@@ -309,6 +310,32 @@ defmodule PhoenixKitPosts.Web.Edit do
     {:noreply, assign(socket, :live_content, content)}
   end
 
+  # Leaf found `[[…]]` targets it has no answer for. Only the host knows what
+  # exists, so resolve them against the posts here and reply.
+  #
+  # A target matches a post by slug first, then by title case-insensitively —
+  # slug because it is unambiguous, title because that is what someone actually
+  # types between the brackets. `seq` is echoed back so Leaf can drop an answer
+  # a later keystroke already superseded.
+  @impl true
+  def handle_info({:leaf_resolve_links, %{editor_id: id, targets: targets, seq: seq}}, socket) do
+    resolved = Map.new(targets, fn target -> {target, resolve_wiki_target(target)} end)
+
+    send_update(Leaf, id: id, action: :link_targets, seq: seq, targets: resolved)
+
+    {:noreply, socket}
+  end
+
+  # A wiki link was clicked. An existing target navigates; a missing one opens
+  # the new-post form with the title prefilled, which is the Obsidian gesture —
+  # clicking a link that does not exist yet is how you create it.
+  @impl true
+  def handle_info({:leaf_link_clicked, %{target: target, href: href}}, socket) do
+    destination = href || Routes.path("/admin/posts/new?title=#{URI.encode(target)}")
+
+    {:noreply, push_navigate(socket, to: destination)}
+  end
+
   @impl true
   def handle_info({:leaf_insert_request, %{type: type}}, socket) do
     do_insert_component(socket, type)
@@ -320,6 +347,35 @@ defmodule PhoenixKitPosts.Web.Edit do
   # Catch-all for other editor events
   def handle_info({:editor_insert_component, _}, socket), do: {:noreply, socket}
   def handle_info({:editor_save_requested, _}, socket), do: {:noreply, socket}
+
+  # Resolve one `[[target]]` against the posts. Returns the shape Leaf expects:
+  # `%{href: …, exists: bool}`.
+  defp resolve_wiki_target(target) do
+    case find_post_for_wiki_target(target) do
+      nil -> %{href: nil, exists: false}
+      post -> %{href: Routes.path("/admin/posts/#{post.uuid}"), exists: true}
+    end
+  end
+
+  defp find_post_for_wiki_target(target) do
+    trimmed = String.trim(target)
+
+    if trimmed == "" do
+      nil
+    else
+      PhoenixKitPosts.get_post_by_slug(trimmed) || find_post_by_title(trimmed)
+    end
+  end
+
+  # `list_posts/1`'s search is a LIKE over title and content, so it can return
+  # near-misses; take only an exact title match, case-insensitively.
+  defp find_post_by_title(title) do
+    downcased = String.downcase(title)
+
+    [search: title, per_page: 25]
+    |> PhoenixKitPosts.list_posts()
+    |> Enum.find(fn post -> String.downcase(post.title || "") == downcased end)
+  end
 
   defp do_insert_component(socket, type) when type in [:image, :video] do
     {:noreply,
