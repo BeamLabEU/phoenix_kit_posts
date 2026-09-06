@@ -1,7 +1,7 @@
 defmodule PhoenixKitPosts.MixProject do
   use Mix.Project
 
-  @version "0.3.0"
+  @version "0.4.0"
   @source_url "https://github.com/BeamLabEU/phoenix_kit_posts"
 
   def project do
@@ -78,7 +78,16 @@ defmodule PhoenixKitPosts.MixProject do
       # PhoenixKit provides the Module behaviour and Settings API — and the
       # migration chain that builds this module's tables, which is why the
       # integration suite cares which core resolves here.
-      pk_dep(:phoenix_kit, "~> 2.0"),
+      #
+      # 2.16 is the floor, and it is a hard one: core's V185 adds
+      # `phoenix_kit_posts.time_zone`, which `Post` maps. Ecto selects every
+      # field of a schema, so against an older core it is not the new feature
+      # that degrades — every read and write of the table fails with
+      # `42703 undefined_column`, and the module's rescues turn that into a
+      # plausible nothing. 2.16 also clears `Utils.TimeZone.valid?/1` and
+      # `from_wall/2` (2.13.9), which `Post.changeset/2` and the schedule
+      # input call on every save.
+      pk_dep(:phoenix_kit, "~> 2.16"),
       # Comments module for post detail page comments section. 0.2.6 is the
       # floor: `Web.Details` does `use PhoenixKitComments.Embed`, which that
       # release first published. The `use` is unguarded, so 0.2.0–0.2.5 fails

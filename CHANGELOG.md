@@ -1,5 +1,48 @@
 # Changelog
 
+## 0.4.0 - 2026-09-06
+
+### Fixed
+
+- **A post scheduled by an editor in a named timezone was published in UTC.**
+  The editor read and wrote its `datetime-local` field with `Integer.parse/1`
+  on the editor's profile timezone. An IANA id (`Europe/Tallinn`) parses as
+  `:error` and fell through to "no shift", so a post scheduled for 09:00 went
+  out at 09:00 UTC — three hours late in Estonian summer. A legacy numeric
+  offset fared better but was still a fixed `±N` hours, so a schedule typed
+  across a daylight-saving boundary landed an hour off; and the site-wide
+  `time_zone` setting was never consulted, so an editor with a blank profile
+  silently got UTC rather than the site's zone.
+
+  Both directions now go through core's `Utils.Date.parse_datetime_local/2` and
+  `format_datetime_local/2` in the new `Web.ScheduleInput`, which resolve the
+  wall clock through `TimeZone.from_wall/2` **on the date typed** — so DST is
+  applied per instant, a legacy offset still works, and the zone follows core's
+  rule: the editor's profile, else the site setting, else UTC. A blank profile
+  value counts as unset. Input that does not parse is left for the changeset to
+  reject instead of becoming a silent UTC instant (#18).
+
+### Added
+
+- **A post records the timezone its schedule was typed in.** `Post.time_zone`
+  (an IANA id or a legacy offset, validated with `Utils.TimeZone.valid?/1` and
+  bounded at the column's 64 characters) is set by the server next to a schedule
+  the editor actually typed; any `time_zone` arriving in the form params is
+  dropped first. Nil on rows written before core V185 (#18).
+
+### Changed
+
+- **The `phoenix_kit` floor is now `~> 2.16`, and it is a hard one.** Core's
+  V185 adds `phoenix_kit_posts.time_zone`, which `Post` maps. Ecto names every
+  field of a schema in every `SELECT`, so on an older core this is not a feature
+  that degrades — every read and write of the table comes back
+  `42703 undefined_column`, and this module's context rescues turn that into a
+  plausible nothing: an empty Posts admin and a scheduled sweep that publishes
+  nothing. 2.16 also clears `Utils.TimeZone.valid?/1` and `from_wall/2`
+  (core 2.13.9), which the changeset and the schedule input call on every save.
+  `test/core_pin_conformance_test.exs` moves with the pin and records why.
+- Dependency updates: `phoenix_kit` 2.16.0.
+
 ## 0.3.0 - 2026-08-14
 
 ### Fixed

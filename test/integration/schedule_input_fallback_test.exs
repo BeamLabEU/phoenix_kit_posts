@@ -19,7 +19,7 @@ end
 
 defmodule PhoenixKitPosts.Integration.ScheduledZoneTest do
   @moduledoc """
-  A scheduled post carries the zone its schedule was typed in (core V184).
+  A scheduled post carries the zone its schedule was typed in (core V185).
   """
   use PhoenixKitPosts.DataCase, async: false
 

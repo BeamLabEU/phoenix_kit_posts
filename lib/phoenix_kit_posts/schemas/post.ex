@@ -124,7 +124,7 @@ defmodule PhoenixKitPosts.Post do
     field(:scheduled_at, :utc_datetime)
     # The zone `scheduled_at` was typed in — an IANA id or a legacy offset,
     # the value as core keeps it — so the wall clock the editor meant can be
-    # re-resolved on its own. Nil on rows written before core V184.
+    # re-resolved on its own. Nil on rows written before core V185.
     field(:time_zone, :string)
     field(:published_at, :utc_datetime)
     field(:repost_url, :string)
