@@ -1,125 +1,319 @@
 # AGENTS.md
 
-This file provides guidance to AI agents when working with code in this repository.
+Guidance for AI agents working on `phoenix_kit_posts`.
 
-## Project Overview
+## Overview
 
-PhoenixKit Posts module — social/community posts: user-generated posts, threaded comments, tags, boards (Pinterest-style collections), likes/dislikes, media attachments, mentions, and scheduled publishing. Long-form blogging/CMS is a separate concern handled by PhoenixKit's built-in Publishing module — Posts is the social, feed-style counterpart. Implements the `PhoenixKit.Module` behaviour for auto-discovery by a parent Phoenix application.
+Social, feed-style posts for PhoenixKit: user-generated posts (`post` /
+`snippet` / `repost`), tags with hashtag parsing, Pinterest-style groups
+(boards), likes and dislikes, media attachments with ordering and a featured
+image, @mentions, a view counter, and scheduled publishing. Comments on a post
+come from `phoenix_kit_comments`; the post details page embeds its
+`CommentsComponent` and this module answers the comments resource-handler
+callbacks. `PhoenixKitPosts` is both the `PhoenixKit.Module` implementation
+and the context module for every post operation. This is a library, not a
+standalone Phoenix app.
 
-## Common Commands
+- **Depends on:** `phoenix_kit` `~> 2.16` (Hex; a hard floor, because core's
+  chain adds `phoenix_kit_posts.time_zone` at V185 and `Post` maps it, so
+  every read and write of the table fails with `42703 undefined_column` on an
+  older core, and because `Post.changeset/2` and `Web.ScheduleInput` call
+  `Utils.TimeZone.valid?/1` and `Utils.Date.parse_datetime_local/2`),
+  `phoenix_kit_comments` `~> 0.3` (hard; `Web.Details` does an unguarded
+  `use PhoenixKitComments.Embed`), `phoenix_live_view` `~> 1.1`, `mdex`
+  `~> 0.13` (Markdown rendering on the details page; declared directly
+  because core carries no Markdown dep). The Leaf editor comes through core.
+- **Consumed by:** no sibling module depends on the package. Core reaches it
+  optionally (`Code.ensure_loaded?/1`): `PhoenixKit.ResourceLinks` registers
+  `PhoenixKitPosts` as the `"post"` comment resource handler, the Sitemap
+  module lists public posts, and `ProcessScheduledJobsWorker` calls
+  `process_scheduled_posts/0` as its catch-up. `phoenix_kit_comments` calls
+  `on_comment_created/3`, `on_comment_deleted/3` and
+  `resolve_comment_resources/1` through that registry.
+- **Admin surface:** tab `:admin_posts` "Posts" at `/admin/posts` (group
+  `:admin_modules`, `match: :prefix`), subtabs `:admin_posts_all` "All Posts"
+  (`/admin/posts`, `match: :exact`) and `:admin_posts_groups` "Groups"
+  (`/admin/posts/groups`); hidden CRUD tabs `/admin/posts/new`,
+  `/admin/posts/:id`, `/admin/posts/:id/edit`, `/admin/posts/groups/new`,
+  `/admin/posts/groups/:id/edit`; settings tab `:admin_settings_posts` at
+  `/admin/settings/posts`. Every tab carries `permission: "posts"`.
+- **Module key** `"posts"`; settings prefix `posts_`.
+
+## What this module does NOT do
+
+- Long-form articles, `.phk` content, versioned or multilingual pages: that is
+  core's Publishing module. Posts is the social counterpart, not a CMS.
+- Comment storage, threading or moderation: `phoenix_kit_comments` owns it.
+  The `PostComment`, `CommentLike` and `CommentDislike` schemas map the older
+  `phoenix_kit_post_comments` / `phoenix_kit_comment_likes` /
+  `phoenix_kit_comment_dislikes` tables and are not used by the context
+  (`Post.has_many :comments` still points at `PostComment`). Do not build new
+  comment features on them.
+- Per-view rows: view tracking is the denormalized `view_count`, bumped once
+  per connected visit to the details page. The `PostView` schema
+  (`phoenix_kit_post_views`) is not written by anything.
+- Database migrations: every table ships in core's chain (see Database &
+  migrations).
+- Its own JS bundle: `js_sources/0` is not implemented; the editor is core's
+  Leaf component and the media picker is core's `MediaSelectorModal`.
+- Its own PubSub topics: nothing here broadcasts.
+- A comments handler registration in host config: core's `ResourceLinks`
+  registers `"post"` automatically when the module is loaded.
+
+## Commands
 
 ```bash
-mix deps.get          # Install dependencies
-mix test              # Run all tests
-mix test test/phoenix_kit_posts_test.exs  # Run specific test file
-mix test --only tag   # Run tests matching a tag
-mix format            # Format code
-mix credo             # Static analysis / linting
-mix dialyzer          # Type checking
-mix docs              # Generate documentation
-mix precommit         # Compile + format + credo + dialyzer
-mix quality           # Format + credo + dialyzer
+mix deps.get
+createdb phoenix_kit_posts_test          # once; DB-backed tests are tagged :integration and auto-skip without it
+mix test
+mix precommit                # compile --warnings-as-errors + format + credo --strict + dialyzer; run before every commit
 ```
+
+`phoenix_kit*` deps resolve from Hex. To run against a local checkout, export
+`<APP>_PATH` (the dep's app name upper-cased plus `_PATH`); `pk_dep/3` in
+`mix.exs` swaps the Hex pin for a `path:` dep at resolve time. Unset means the
+Hex pin, so `mix hex.publish` is unaffected. Run `mix deps.get` with the var
+exported before the first `mix test` (a stale lock aborts on the optional
+`igniter` dep), and never commit a hand-edited `path:` tuple.
+
+```bash
+PHOENIX_KIT_PATH=../phoenix_kit mix deps.get && PHOENIX_KIT_PATH=../phoenix_kit mix test
+```
+
+Only `:phoenix_kit` goes through `pk_dep/3`. `:phoenix_kit_comments` is a
+plain Hex pin, so a local comments checkout means a temporary
+`{:phoenix_kit_comments, path: "../phoenix_kit_comments", override: true}`
+reverted together with `mix.lock` before committing.
+`test/core_pin_conformance_test.exs` fails on a committed `path:` dep and on a
+three-segment core pin (`~> 2.16.x` would exclude the next core minor for every
+host); move its `@must_admit` / `@must_reject` lists together with the pin.
+
+## Conventions
+
+- Module key `"posts"` in every callback. Tab ids are prefixed `:admin_posts`
+  (main tabs) and `:admin_settings_posts` (settings). URL segments use
+  hyphens, never underscores (the behaviour test checks tab paths).
+- Navigation and redirects go through `PhoenixKit.Utils.Routes.path/1`; never
+  a relative or hand-built path. The one raw path is the `path` that
+  `resolve_comment_resources/1` returns (`/admin/posts/<uuid>`): the comments
+  contract wants it WITHOUT the prefix, because the renderer applies
+  `Routes.path/1` once.
+- Routing: every admin page is a `live_view:` tuple on a tab in
+  `admin_tabs/0` / `settings_tabs/0`; core compiles them into
+  `live_session :phoenix_kit_admin`. No `route_module/0`. Never hand-register
+  these routes in a host router (a different live_session loses the admin
+  layout and breaks cross-session navigation); see core's
+  `guides/custom-admin-pages.md`.
+- LiveViews `use PhoenixKitWeb, :live_view` (all six). Templates are
+  `.html.heex` colocated files; none wraps in `LayoutWrapper` (admin LVs never
+  do). Core provides `@phoenix_kit_current_scope`, `@phoenix_kit_current_user`,
+  `@current_locale` and `@url_path`.
+- Gettext: own backend `PhoenixKitPosts.Gettext` (`priv/gettext`, locales en,
+  et, ru; `priv` is in the Hex package files so the catalogs ship, and the
+  behaviour test asserts a `ru` lookup resolves). A LiveView opts in with
+  `use Gettext, backend: PhoenixKitPosts.Gettext` placed AFTER
+  `use PhoenixKitWeb, :live_view`, which otherwise binds the macros to core's
+  backend. Extract and merge with `mix gettext.extract --merge`. No
+  catalog-data strings need `*_noop` anchors today.
+- JS hooks: none. If a hook becomes necessary, ship it in a prebuilt bundle
+  declared by `js_sources/0` under a namespaced global, never from an inline
+  `<script>` (morphdom does not execute inserted script tags, so an inline
+  hook vanishes on LiveView navigation). See Landmines for the inline script
+  that exists today.
+- `enabled?/0` reads `posts_enabled` and rescues everything to `false` (the
+  DB may not be up). The other rescue sites are deliberate and short:
+  `count_posts/1` (to `0`), `resolve_comment_resources/1` (to `%{}`),
+  `log_post_activity/4` (to `:ok`) and `Post.unique_slug/2` (to the
+  unsuffixed slug). Everything else raises; do not add blanket rescues.
+  `PhoenixKit.RepoHelper.repo/0` is the only repo access.
+- Activity logging: `log_post_activity/4` writes `PhoenixKit.Activity.log/1`
+  entries with `module: "posts"`, `mode: "auto"`, `resource_type: "post"`,
+  `resource_uuid`, and metadata `%{"actor_role" => "user", "title" => title}`.
+  Actions are `post.created`, `post.published`, `post.deleted` (updates are
+  not logged). The actor is the creator for `created`; for `published` and
+  `deleted` it is the `:actor_uuid` option when the caller passes one (the
+  admin LiveViews pass the current user), else the post's author. Guarded
+  with `Code.ensure_loaded?(PhoenixKit.Activity)` and rescued, so logging can
+  never fail the post operation. Metadata carries the title and nothing else
+  about the user.
+- Soft delete: none. `delete_post/2` is a hard delete; the FK cascades remove
+  media, likes, assignments and mentions.
+- Statuses are strings: `draft` (default), `public`, `unlisted`, `scheduled`.
+  Types: `post`, `snippet`, `repost` (a repost carries `repost_url`).
+- Publishing is a single-statement compare-and-swap. `publish_post/2` updates
+  `WHERE status IN only_if` (default `draft`/`scheduled`/`unlisted`) with
+  `update_all`, so exactly one caller wins and logs, however many hold the
+  same stale struct. A loser gets `{:ok, reloaded}` (never an error, because
+  the scheduled handler turns errors into failed jobs). Never move that guard
+  back onto the in-memory `post.status`. Publishing bypasses
+  `Post.changeset/2` on purpose (sets `updated_at` by hand) so it cannot
+  regenerate the slug.
+- Two sweeps exist by design: this module's Oban worker
+  `Workers.PublishScheduledPostsJob` (`queue: :posts`, `max_attempts: 3`) and
+  core's `ProcessScheduledJobsWorker` catch-up, both calling
+  `process_scheduled_posts/0`. The sweep and `ScheduledPostHandler` pass
+  `only_if: ["scheduled"]`, so a post moved back to draft after scheduling is
+  never published by a retry or a sweep. `process_scheduled_posts/0` counts
+  only winners.
+- Scheduling: `schedule_post/4` sets `status: "scheduled"` + `scheduled_at`,
+  cancels pending `ScheduledJobs` rows for the post, and creates a new job for
+  `ScheduledPostHandler` (`job_type "publish_post"`, `resource_type "post"`)
+  in one transaction; `unschedule_post/1` cancels the jobs and reverts to
+  draft. `Post.changeset/2` refuses a past `scheduled_at` only when the
+  schedule or the status is what is changing, so editing other fields of a
+  scheduled post keeps its schedule.
+- `scheduled_at` is stored as a UTC instant and edited as a `datetime-local`
+  wall clock in the EDITOR's zone (`Web.ScheduleInput`: the user's
+  `user_timezone`, else the site `time_zone` setting, else UTC, via core's
+  `get_user_timezone/1`); named zones follow daylight saving on the date
+  typed, legacy fixed offsets still work. The zone the schedule was typed in
+  is kept in `Post.time_zone` (validated by `Utils.TimeZone.valid?/1`, max 64
+  chars; nil on rows older than the column).
+- Slugs: `Post.changeset/2` treats an ABSENT `slug` change as "unchanged",
+  an explicit non-blank slug as authoritative, and an explicitly blank slug as
+  "regenerate from the title" (the column is NOT NULL). Generation uses
+  core's `Slug.slugify/2` (romanizing) and core's `Slug.ensure_unique/2`
+  (suffix `-2`, `-3`, ... until free, excluding the post's own row). The
+  uniqueness probe is advisory; the DB unique index on `slug` is the
+  authority, and `get_post_by_slug/2` uses `repo().one()`, which raises on
+  duplicates. `PostTag` and `PostGroup` slug the same way (tag slug unique;
+  group slug unique per `user_uuid`).
+- Post content is Markdown, rendered on the details page by MDEx with GFM
+  extensions and `render: [unsafe: true]`, then passed through core's
+  `HtmlSanitizer.sanitize/1`. Never render post HTML without the sanitizer.
+- Editor mode: the setting value goes straight to Leaf's `:mode`, whose
+  normalizer has no catch-all, so `Web.Edit.__normalize_editor_mode__/1` maps
+  anything outside `[:visual, :hybrid, :markdown, :html]` to `:hybrid`.
+  `PhoenixKit.Settings.get_editor_mode/0` is probed at runtime.
+- Media: `PostMedia` rows are unique on `(post_uuid, position)`; the
+  featured image IS the row at `position: 1` (`set_featured_image/2` deletes
+  and reinserts it in a transaction), so a reorder that moves another file
+  to position 1 changes the featured image. Content
+  image/video insertion into the body is `push_event("insert-media", %{items:
+  [%{url, type}]})` from `Web.Edit`, consumed client-side (see Landmines).
+  File URLs come from core's `Storage.URLSigner`.
+- Authorization in the LiveViews: editing and deleting a post require the
+  current user to own it or to hold the admin/owner role
+  (`PhoenixKit.Users.Roles`). Tab access is the `"posts"` permission.
+- Comments seam: `Web.Details` renders
+  `PhoenixKitComments.Web.CommentsComponent` with `resource_type="post"` and
+  keeps `use PhoenixKitComments.Embed`, which forwards the composer's
+  `{:leaf_changed, ...}` message into the component; without it "Post
+  Comment" silently submits empty content. `on_comment_created/3` and
+  `on_comment_deleted/3` maintain `comment_count`; the `{:comments_updated,
+  _}` message refreshes the page.
+- UUIDv7 primary keys everywhere (`uuid_generate_v7()`, never
+  `gen_random_uuid()`); every table-backed schema has
+  `use PhoenixKit.SchemaPrefix` right after `use Ecto.Schema`
+  (`test/schema_prefix_conformance_test.exs` enforces it).
+- `css_sources/0` returns `[:phoenix_kit_posts]` (an atom list, the OTP app
+  name), so the host's Tailwind picks up this module's templates. Without it
+  classes unique to these templates are purged.
+- Dialyzer runs with `list_unused_filters: true`; `.dialyzer_ignore.exs` is
+  intentionally empty. An entry covering a not-yet-released core API is
+  removed the moment the floor moves to the release that adds it.
+
+### Landmines
+
+- Inserting media into the editor body does nothing after live-navigating
+  into the editor: `web/edit.html.heex` defines `window.postsEditorInsertMedia`
+  and the `phx:insert-media` listener in an inline `<script>`, which morphdom
+  does not execute on navigation. Fix: move both into a hook bundle declared
+  by `js_sources/0` (a page helper today, not a hook, but the same delivery
+  rule applies).
+- Strings in `Web.Posts`, `Web.Edit`, `Web.Details`, `Web.Groups` and
+  `Web.GroupEdit` stay English in `et`/`ru`: only `Web.Settings` rebinds
+  gettext to `PhoenixKitPosts.Gettext`, so `gettext/1` calls elsewhere resolve
+  against core's backend and their msgids are in no catalogue. Fix: add the
+  `use Gettext, backend:` line after `use PhoenixKitWeb, :live_view` and
+  re-extract before adding strings there.
+- The module reports itself disabled, every count reads 0, or a suite passes
+  while exercising nothing: `enabled?/0` and `count_posts/1` rescue DB errors
+  into `false` / `0`. Two causes: `config :phoenix_kit, repo:` missing (the
+  harness test is the loud failure), or a core below 2.16 (`42703
+  undefined_column` on `time_zone` from every query that names `Post`).
+- A post published twice, logged twice, or a scheduled post that the author
+  drafted going live anyway: someone reintroduced an in-memory status check
+  or dropped `only_if: ["scheduled"]` from the sweep/handler path. The
+  compare-and-swap in `transition_to_public/2` is the guard; the
+  `Integration.PublishPostTest` asserts one activity row.
+- `Ecto.MultipleResultsError` from `get_post_by_slug/2` means duplicate slugs
+  got in; `unique_slug/2` rescues a missing repo into the unsuffixed slug, so
+  a suite without a DB cannot see collisions. `Integration.SlugUniquenessTest`
+  is the check.
 
 ## Architecture
 
-This is a **library** (not a standalone Phoenix app) that provides posts as a PhoenixKit plugin module.
-
-### File Layout
-
 ```
 lib/
-  phoenix_kit_posts.ex                    # Main module — context + PhoenixKit.Module behaviour
+  phoenix_kit_posts.ex                    # PhoenixKit.Module callbacks + the whole context
   phoenix_kit_posts/
+    gettext.ex                            # PhoenixKitPosts.Gettext backend (priv/gettext)
     schemas/
-      post.ex                             # Post schema (title, content, status, type, counters)
-      post_like.ex                        # Like tracking (one per user per post)
-      post_dislike.ex                     # Dislike tracking (one per user per post)
-      post_comment.ex                     # Comment schema (threaded via parent_uuid)
-      comment_like.ex                     # Comment like tracking
-      comment_dislike.ex                  # Comment dislike tracking
-      post_tag.ex                         # Tag schema with auto-slugification
-      post_tag_assignment.ex              # Many-to-many join for post ↔ tag
-      post_group.ex                       # Group schema (Pinterest-style boards)
-      post_group_assignment.ex            # Many-to-many join for post ↔ group
-      post_media.ex                       # Media attachments with ordering
-      post_mention.ex                     # User mentions in posts
-      post_view.ex                        # View tracking schema
-    handlers/
-      scheduled_post_handler.ex           # Handler for scheduled publishing lifecycle
+      post.ex                             # Post: statuses, types, slug + time_zone rules
+      post_like.ex, post_dislike.ex       # one row per (post_uuid, user_uuid)
+      post_tag.ex, post_tag_assignment.ex # tags (auto-slug) + join
+      post_group.ex, post_group_assignment.ex  # boards (slug unique per user) + join
+      post_media.ex                       # (post_uuid, position) unique; position 1 = featured
+      post_mention.ex                     # (post_uuid, user_uuid) unique; mention_type
+      post_view.ex                        # unused; view_count on Post is the counter
+      post_comment.ex, comment_like.ex, comment_dislike.ex  # legacy; comments live in phoenix_kit_comments
+    handlers/scheduled_post_handler.ex    # PhoenixKit.ScheduledJobs.Handler: publish_post(only_if: ["scheduled"])
+    workers/publish_scheduled_posts_job.ex # Oban cron worker, queue :posts, calls process_scheduled_posts/0
     web/
-      posts.ex & posts.html.heex          # Admin post listing LiveView
-      edit.ex & edit.html.heex            # Admin post create/edit LiveView
-      details.ex & details.html.heex      # Admin post details LiveView
-      groups.ex & groups.html.heex        # Admin group listing LiveView
-      group_edit.ex & group_edit.html.heex # Admin group create/edit LiveView
-      settings.ex & settings.html.heex    # Admin settings LiveView
-    workers/
-      publish_scheduled_posts_job.ex      # Oban worker for scheduled post publishing
+      posts.ex (+ .html.heex)             # list, filters, search, pagination, bulk publish/delete
+      edit.ex (+ .html.heex)              # create/edit: Leaf editor, tags, mentions, groups, schedule, slug, media
+      details.ex (+ .html.heex)           # single post, Markdown render, likes, embedded comments
+      groups.ex, group_edit.ex (+ .html.heex)
+      settings.ex (+ .html.heex)          # the posts_* settings page
+      schedule_input.ex                   # datetime-local <-> UTC in the editor's zone
+priv/gettext/                             # default.pot + en/et/ru
+test/support/                             # Test.Repo, DataCase (fixtures + assert_activity_count/3)
 ```
 
-### Key Modules
+Key context areas in `PhoenixKitPosts`: CRUD (`create_post/2` requires an
+existing user, `update_post/2`, `delete_post/2`, `get_post/2`, `get_post!/2`,
+`get_post_by_slug/2`, `list_posts/1` with `:user_uuid` / `:status` / `:type` /
+`:search` / `:page` + `:per_page` / `:preload`, `count_posts/1`,
+`list_public_posts/1`); publishing (`publish_post/2`, `schedule_post/4`,
+`unschedule_post/1`, `draft_post/1`, `process_scheduled_posts/0`); counter
+caches (`increment_*`/`decrement_*` for like, dislike, comment; `view`);
+likes/dislikes (`like_post/2` ... `list_post_dislikes/2`); comments handler
+callbacks; tags (`find_or_create_tag/1`, `parse_hashtags/1`,
+`add_tags_to_post/2`, `remove_tag_from_post/2`, `list_popular_tags/1`); groups
+(`create_group/2` ... `reorder_groups/2`, `add_posts_to_group/3`); mentions;
+media (`attach_media/3`, `detach_media/2`, `reorder_media/2`,
+`set_featured_image/2`, `get_featured_image/1`, `remove_featured_image/1`).
 
-- **`PhoenixKitPosts`** (`lib/phoenix_kit_posts.ex`) — Main module implementing `PhoenixKit.Module` behaviour AND serving as the context module for all post operations (CRUD, likes/dislikes, tags, groups, media, mentions, scheduling).
+### Tables (all in core's chain)
 
-- **`PhoenixKitPosts.Post`** (`lib/phoenix_kit_posts/schemas/post.ex`) — Ecto schema for posts. Fields: `title`, `subtitle`, `content`, `slug`, `type`, `status` (draft/public/unlisted/scheduled), `user_uuid`, `like_count`, `dislike_count`, `comment_count`, `view_count`, `scheduled_at`, `published_at`, `metadata`.
+| Table | Schema | Notes |
+|-------|--------|-------|
+| `phoenix_kit_posts` | `Post` | slug unique; `user_uuid` NOT NULL FK; `time_zone` |
+| `phoenix_kit_post_likes` | `PostLike` | unique `(post_uuid, user_uuid)` |
+| `phoenix_kit_post_dislikes` | `PostDislike` | unique `(post_uuid, user_uuid)` |
+| `phoenix_kit_post_tags` | `PostTag` | slug unique (`phoenix_kit_post_tags_slug_index`) |
+| `phoenix_kit_post_tag_assignments` | `PostTagAssignment` | unique `(post_uuid, tag_uuid)` |
+| `phoenix_kit_post_groups` | `PostGroup` | unique `(user_uuid, slug)` |
+| `phoenix_kit_post_group_assignments` | `PostGroupAssignment` | unique `(post_uuid, group_uuid)` |
+| `phoenix_kit_post_media` | `PostMedia` | unique `(post_uuid, position)` |
+| `phoenix_kit_post_mentions` | `PostMention` | unique `(post_uuid, user_uuid)` |
+| `phoenix_kit_post_views` | `PostView` | unused |
+| `phoenix_kit_post_comments` | `PostComment` | legacy |
+| `phoenix_kit_comment_likes` | `CommentLike` | legacy |
+| `phoenix_kit_comment_dislikes` | `CommentDislike` | legacy |
 
-- **`PhoenixKitPosts.PostLike`** / **`PostDislike`** — Like/dislike tracking with unique constraint on `(post_uuid, user_uuid)`.
+Denormalized counters on `Post`: `like_count`, `dislike_count`,
+`comment_count`, `view_count`, maintained by the context, never by the
+LiveViews directly.
 
-- **`PhoenixKitPosts.PostComment`** — Threaded comments with self-referencing `parent_uuid`, depth tracking, and like/dislike counters.
+### Permissions
 
-- **`PhoenixKitPosts.PostTag`** — Tag schema with auto-slugification. Assigned to posts via `PostTagAssignment`.
+One permission key, `"posts"` (`permission_metadata/0`; icon
+`hero-document-text`). No sub-permissions. Ownership vs admin/owner role is
+checked in the LiveViews, not by core.
 
-- **`PhoenixKitPosts.PostGroup`** — Pinterest-style board/collection schema. Assigned via `PostGroupAssignment`.
-
-- **`PhoenixKitPosts.PostMedia`** — Media attachments with `position` for ordering.
-
-- **`PhoenixKitPosts.PostMention`** — User mention tracking within posts.
-
-- **`PhoenixKitPosts.ScheduledPostHandler`** — Lifecycle handler for scheduled post publishing.
-
-- **`PhoenixKitPosts.Workers.PublishScheduledPostsJob`** — Oban worker that publishes posts when their `scheduled_at` time arrives.
-
-### How It Works
-
-1. Parent app adds this as a dependency in `mix.exs`
-2. PhoenixKit scans `.beam` files at startup and auto-discovers modules (zero config)
-3. `admin_tabs/0` callback registers the posts dashboard; PhoenixKit generates routes at compile time
-4. `settings_tabs/0` registers the settings page under admin settings
-5. Settings are persisted via `PhoenixKit.Settings` API (DB-backed in parent app)
-6. Permissions are declared via `permission_metadata/0` and checked via `Scope.has_module_access?/2`
-
-### Post Status
-
-Four statuses as strings:
-- `"draft"` — not visible publicly (default)
-- `"public"` — visible to all
-- `"unlisted"` — accessible via direct link but not listed
-- `"scheduled"` — will be auto-published at `scheduled_at` time
-
-### Like/Dislike Counters
-
-- **Denormalized** on Post schema (`like_count`, `dislike_count`, `comment_count`, `view_count`)
-- **Transaction-safe** increment/decrement operations
-- **One-per-user** enforced by unique constraints
-
-### Database Tables
-
-- `phoenix_kit_posts` — Post records (UUIDv7 PK)
-- `phoenix_kit_posts_likes` — Like records with unique `(post_uuid, user_uuid)` constraint
-- `phoenix_kit_posts_dislikes` — Dislike records with unique `(post_uuid, user_uuid)` constraint
-- `phoenix_kit_posts_comments` — Threaded comment records (self-referencing `parent_uuid`)
-- `phoenix_kit_posts_comments_likes` — Comment like records
-- `phoenix_kit_posts_comments_dislikes` — Comment dislike records
-- `phoenix_kit_posts_tags` — Tag definitions
-- `phoenix_kit_posts_tag_assignments` — Post ↔ tag many-to-many join
-- `phoenix_kit_posts_groups` — Group/board definitions
-- `phoenix_kit_posts_group_assignments` — Post ↔ group many-to-many join
-- `phoenix_kit_posts_media` — Media attachments with ordering
-- `phoenix_kit_posts_mentions` — User mention records
-- `phoenix_kit_posts_views` — View tracking records
-
-### Settings Keys
+### Settings keys
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
@@ -140,70 +334,97 @@ Four statuses as strings:
 | `posts_max_mentions` | integer | 10 | Max mentions per post |
 | `posts_max_tags` | integer | 20 | Max tags per post |
 
-## Critical Conventions
+Settings are read and written through `PhoenixKit.Settings` (`*_with_module`
+writers tag them with module `"posts"`).
 
-- **Module key** must be consistent across all callbacks: `"posts"`
-- **Tab IDs**: prefixed with `:admin_posts` (main tabs) and `:admin_settings_posts` (settings tab)
-- **URL paths**: `/admin/posts` (dashboard), `/admin/settings/posts` (settings)
-- **Navigation paths**: always use `PhoenixKit.Utils.Routes.path/1`, never relative paths
-- **`enabled?/0`**: must rescue errors and return `false` as fallback (DB may not be available)
-- **LiveViews use `PhoenixKitWeb` macros** — use `use PhoenixKitWeb, :live_view` (not `use Phoenix.LiveView` directly)
-- **JavaScript hooks**: must be inline `<script>` tags; register on `window.PhoenixKitHooks`
-- **LiveView assigns** available in admin pages: `@phoenix_kit_current_scope`, `@current_locale`, `@url_path`
-- **UUIDv7 primary keys** — all tables use `uuid_generate_v7()`, never `gen_random_uuid()`
-- **Admin routing** — plugin LiveView routes are auto-discovered by PhoenixKit and compiled into `live_session :phoenix_kit_admin`. Never hand-register them in a parent app's `router.ex`; use `live_view:` on a tab or a route module. See `phoenix_kit/guides/custom-admin-pages.md` for the authoritative reference
+PubSub topics: none.
 
-## Tailwind CSS Scanning
+## Database & migrations
 
-This module implements `css_sources/0` returning `["phoenix_kit_posts"]` so PhoenixKit's installer adds the correct `@source` directive to the parent's `app.css`. Without this, Tailwind purges CSS classes unique to this module's templates.
+None. Tables `phoenix_kit_posts`, `phoenix_kit_post_likes`,
+`phoenix_kit_post_dislikes`, `phoenix_kit_post_tags`,
+`phoenix_kit_post_tag_assignments`, `phoenix_kit_post_groups`,
+`phoenix_kit_post_group_assignments`, `phoenix_kit_post_media`,
+`phoenix_kit_post_mentions`, `phoenix_kit_post_views`,
+`phoenix_kit_post_comments`, `phoenix_kit_comment_likes` and
+`phoenix_kit_comment_dislikes` ship in core's chain (V135 baseline;
+`phoenix_kit_posts.time_zone` from V185); `migration_module/0` is unset. A
+schema change is a core migration first (raise this module's core floor to
+the release that ships it, with the conformance test's lists), then schema
+edits here. UUIDv7 PKs and `use PhoenixKit.SchemaPrefix` on every table-backed
+schema.
 
-## Versioning & Releases
+## Testing
 
-### Tagging & GitHub releases
+- Test DB `phoenix_kit_posts_test` (`MIX_TEST_PARTITION` appended);
+  `PGDATABASE` overrides the name, `PGUSER` / `PGPASSWORD` / `PGHOST` the
+  connection (defaults `postgres` / `postgres` / `localhost`), `PGPOOL` the
+  pool size (default `schedulers_online() * 2`). `config/test.exs` also sets
+  `config :phoenix_kit, repo: PhoenixKitPosts.Test.Repo`; without it
+  `RepoHelper.repo/0` resolves nothing and the context is untestable.
+- Two tiers. Unit tests (behaviour, core-pin and schema-prefix conformance,
+  slug generation, `ScheduleInput` conversions, editor-mode normalization)
+  run with no database. `:integration` tests use `PhoenixKitPosts.DataCase`
+  and are excluded automatically when the DB is unreachable;
+  `test_helper.exs` probes with `SELECT 1` first, because `start_link/0`
+  succeeds lazily against a missing database.
+- Schema: `PhoenixKit.Migration.ensure_current(TestRepo, log: false)` builds
+  everything (no module chain). A `PhoenixKit.Migrations.BelowFloorError` is
+  re-raised, not folded into "no database", so a core below the floor fails
+  the run instead of skipping half of it. `Phoenix.PubSub` is started as
+  `PhoenixKit.PubSub` because activity logging broadcasts.
+- Support: `PhoenixKitPosts.Test.Repo`; `DataCase` with `user_fixture/1`
+  (inserts a `PhoenixKit.Users.Auth.User` directly, skipping the
+  rate-limited registration path), `post_fixture/2` (inserts directly so
+  tests can set statuses and past `scheduled_at` values the changeset
+  refuses), and `assert_activity_count/3` (counts rows in
+  `phoenix_kit_activities`; a refute-shaped assertion would pass on a wholly
+  broken activity pipeline).
+- `test/integration/harness_test.exs` proves the repo, the tables and the
+  activity table are wired before anything relies on them. Slug
+  generation tests assert only what holds on every core version (ASCII
+  cases), by design.
+- Known noise: none recorded.
 
-Tags use **bare version numbers** (no `v` prefix):
+## Feature notes
 
-```bash
-git tag 0.1.0
-git push origin 0.1.0
-```
+None. Feature behaviour is documented in `@moduledoc`s and the comments beside
+the code (`Post.changeset/2` for slug and schedule rules,
+`PhoenixKitPosts.transition_to_public/2` for the publish compare-and-swap,
+`Web.ScheduleInput` for the timezone round trip).
 
-GitHub releases are created with `gh release create` using the tag as the release name. The title format is `<version> - <date>`, and the body comes from the corresponding `CHANGELOG.md` section:
+## Versioning & releases
 
-```bash
-gh release create 0.1.0 \
-  --title "0.1.0 - 2026-03-24" \
-  --notes "$(changelog body for this version)"
-```
+SemVer. The version is single-sourced in `mix.exs` (`@version`); `version/0`
+reads it at compile time and the behaviour test asserts against
+`Mix.Project.config()[:version]`, so nothing else needs bumping.
 
-### Full release checklist
+Release procedure (the steps the maintainer runs):
 
-1. Update version in `mix.exs`, `lib/phoenix_kit_posts.ex` (`version/0`), and the version test
-2. Add changelog entry in `CHANGELOG.md`
-3. Run `mix precommit` — ensure zero warnings/errors before proceeding
-4. Commit all changes: `"Bump version to x.y.z"`
-5. Push to main and **verify the push succeeded** before tagging
-6. Create and push git tag: `git tag x.y.z && git push origin x.y.z`
-7. Create GitHub release: `gh release create x.y.z --title "x.y.z - YYYY-MM-DD" --notes "..."`
+1. Bump `@version` in `mix.exs`; add a `CHANGELOG.md` entry headed `## x.y.z - YYYY-MM-DD`.
+2. `mix precommit` clean.
+3. Commit (`"Bump version to x.y.z"`) and push; verify the push landed.
+4. `mix hex.publish`.
+5. Tag, matching the form of the newest existing tag (`git tag --sort=-creatordate | head -1` shows it), and push the tag.
+6. GitHub release via `gh release create` if the repo does those (`gh release list` shows whether it does).
 
-**IMPORTANT:** Never tag or create a release before all changes are committed and pushed. Tags are immutable pointers — tagging before pushing means the release points to the wrong commit.
+Tags are immutable pointers: never tag before the commit is pushed and the
+publish has succeeded.
 
-## Pull Requests
+## Pull requests & commits
 
-### Commit Message Rules
+- Commit messages start with an action verb (`Add`, `Update`, `Fix`, `Remove`, `Merge`). No AI attribution and no `Co-Authored-By` trailers.
+- Version bumps and CHANGELOG entries land with the release commit on upstream, not in feature PRs.
+- Review files live in `dev_docs/pull_requests/{year}/{pr_number}-{slug}/{AGENT}_REVIEW.md`, one file per reviewing agent, never edited by another agent; `FOLLOW_UP.md` records how each finding was resolved. Severities: `BUG - CRITICAL/HIGH/MEDIUM`, `IMPROVEMENT - HIGH/MEDIUM`, `NITPICK`.
 
-Start with action verbs: `Add`, `Update`, `Fix`, `Remove`, `Merge`.
+## TODOs
 
-### PR Reviews
-
-PR review files go in `dev_docs/pull_requests/{year}/{pr_number}-{slug}/` directory. Use `{AGENT}_REVIEW.md` naming (e.g., `CLAUDE_REVIEW.md`, `GEMINI_REVIEW.md`). See `dev_docs/pull_requests/README.md`.
-
-Review template should use severity levels: `BUG - CRITICAL`, `BUG - HIGH`, `BUG - MEDIUM`, `NITPICK`, `OBSERVATION`. Include a "What Was Done Well" section. Use `-- FIXED` notation for resolved issues.
-
-## External Dependencies
-
-- **PhoenixKit** (`~> 1.7`) — Module behaviour, Settings API, shared components, RepoHelper, Utils (Date, UUID, Routes), Users.Auth.User, Users.Roles
-- **Phoenix LiveView** (`~> 1.0`) — Admin LiveViews
-- **ex_doc** (`~> 0.34`, dev only) — Documentation generation
-- **credo** (`~> 1.7`, dev/test) — Static analysis
-- **dialyxir** (`~> 1.4`, dev/test) — Type checking
+- Move `window.postsEditorInsertMedia` and the `phx:insert-media` listener
+  out of the inline `<script>` in `web/edit.html.heex` into a bundle declared
+  by `js_sources/0`. Trigger: the next change to the editor's media flow.
+- Rebind gettext in the five LiveViews that still resolve against core's
+  backend, and extract their strings. Trigger: the next user-facing string
+  added or translated outside `Web.Settings`.
+- Drop or repurpose the legacy comment schemas (`PostComment`, `CommentLike`,
+  `CommentDislike`) and `PostView`. Trigger: a core migration that retires
+  the tables; until then leave the schemas so `Post` still compiles.
