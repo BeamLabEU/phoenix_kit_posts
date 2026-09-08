@@ -18,6 +18,11 @@ defmodule PhoenixKitPosts.Web.Edit do
   """
 
   use PhoenixKitWeb, :live_view
+  # Rebind gettext macros to the posts module's own catalogs (priv/gettext).
+  # Must stay directly under the `use PhoenixKitWeb` line: the backend is
+  # resolved at each call site's expansion, so a gettext/1 written above
+  # this line would still bind to core's backend.
+  use Gettext, backend: PhoenixKitPosts.Gettext
 
   alias Phoenix.Component
 

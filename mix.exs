@@ -114,10 +114,14 @@ defmodule PhoenixKitPosts.MixProject do
     [
       licenses: ["MIT"],
       links: %{"GitHub" => @source_url},
-      # `priv` ships the module's own gettext catalogs (priv/gettext/**/*.po).
+      # `priv` ships the module's own gettext catalogs (priv/gettext/**/*.po)
+      # AND the JS hook bundle (priv/static/assets/phoenix_kit_posts.js).
       # PhoenixKitPosts.Gettext is a compile-time backend, so the consuming app
       # compiles these catalogs from the tarball — omit `priv` and every non-English
-      # translation silently falls back to the msgid. Mirrors phoenix_kit core.
+      # translation silently falls back to the msgid. The bundle is resolved
+      # through `:code.priv_dir/1` by core's :phoenix_kit_js_sources compiler,
+      # so without `priv` the editor's media inserter is missing in the host.
+      # Mirrors phoenix_kit core.
       files: ~w(lib priv .formatter.exs mix.exs README.md CHANGELOG.md LICENSE)
     ]
   end

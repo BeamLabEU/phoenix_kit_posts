@@ -273,6 +273,25 @@ defmodule PhoenixKitPosts do
   @impl PhoenixKit.Module
   def css_sources, do: [:phoenix_kit_posts]
 
+  # The post editor's media inserter. A LiveView hook has to be in the host's
+  # LiveSocket when it is CONSTRUCTED, so it cannot come from an inline
+  # <script> in a template: morphdom never executes a script tag it inserts,
+  # which is why `window.postsEditorInsertMedia` was dead after every
+  # live_redirect into the editor. Core's :phoenix_kit_js_sources compiler
+  # folds this bundle's global into window.PhoenixKitHooks.
+  #
+  # `@impl` is safe here: the core floor is 2.16, which declares the callback.
+  @impl PhoenixKit.Module
+  def js_sources do
+    [
+      %{
+        app: :phoenix_kit_posts,
+        file: "static/assets/phoenix_kit_posts.js",
+        global: "PhoenixKitPostsHooks"
+      }
+    ]
+  end
+
   # ============================================================================
   # CRUD Operations
   # ============================================================================

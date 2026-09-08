@@ -242,3 +242,38 @@ msgstr "Kuva vaatamiste arv"
 #, elixir-autogen, elixir-format
 msgid "Unlisted"
 msgstr "Loetlemata"
+
+#: lib/phoenix_kit_posts/web/posts.html.heex:322
+#: lib/phoenix_kit_posts/web/posts.html.heex:325
+#, elixir-autogen, elixir-format
+msgid "Delete post"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/posts.html.heex:287
+#: lib/phoenix_kit_posts/web/posts.html.heex:290
+#, elixir-autogen, elixir-format
+msgid "Edit post"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/posts.html.heex:309
+#: lib/phoenix_kit_posts/web/posts.html.heex:313
+#, elixir-autogen, elixir-format
+msgid "Move to draft"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/posts.html.heex:297
+#: lib/phoenix_kit_posts/web/posts.html.heex:301
+#, elixir-autogen, elixir-format
+msgid "Publish post"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/edit.ex:450
+#, elixir-autogen, elixir-format
+msgid "Something went wrong. Please try again."
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/posts.html.heex:278
+#: lib/phoenix_kit_posts/web/posts.html.heex:281
+#, elixir-autogen, elixir-format
+msgid "View post"
+msgstr ""

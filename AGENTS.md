@@ -54,8 +54,9 @@ standalone Phoenix app.
   (`phoenix_kit_post_views`) is not written by anything.
 - Database migrations: every table ships in core's chain (see Database &
   migrations).
-- Its own JS bundle: `js_sources/0` is not implemented; the editor is core's
-  Leaf component and the media picker is core's `MediaSelectorModal`.
+- Its own editor or media picker: the editor is core's Leaf component and the
+  picker is core's `MediaSelectorModal`. The module's one JS bundle
+  (`js_sources/0`) carries a single hook, the editor's media inserter.
 - Its own PubSub topics: nothing here broadcasts.
 - A comments handler registration in host config: core's `ResourceLinks`
   registers `"post"` automatically when the module is loaded.
@@ -110,16 +111,27 @@ host); move its `@must_admit` / `@must_reject` lists together with the pin.
   `@current_locale` and `@url_path`.
 - Gettext: own backend `PhoenixKitPosts.Gettext` (`priv/gettext`, locales en,
   et, ru; `priv` is in the Hex package files so the catalogs ship, and the
-  behaviour test asserts a `ru` lookup resolves). A LiveView opts in with
-  `use Gettext, backend: PhoenixKitPosts.Gettext` placed AFTER
-  `use PhoenixKitWeb, :live_view`, which otherwise binds the macros to core's
-  backend. Extract and merge with `mix gettext.extract --merge`. No
-  catalog-data strings need `*_noop` anchors today.
-- JS hooks: none. If a hook becomes necessary, ship it in a prebuilt bundle
-  declared by `js_sources/0` under a namespaced global, never from an inline
-  `<script>` (morphdom does not execute inserted script tags, so an inline
-  hook vanishes on LiveView navigation). See Landmines for the inline script
-  that exists today.
+  behaviour test asserts a `ru` lookup resolves). **All six LiveViews carry
+  `use Gettext, backend: PhoenixKitPosts.Gettext` directly under their
+  `use PhoenixKitWeb, :live_view`, and a new one must too.** The backend is
+  resolved per call site at expansion time, so the ORDER is the whole rule: a
+  `gettext/1` written above that line still binds to core's backend, its msgid
+  lands in no catalogue of this package, and it renders raw English in every
+  locale with no compile error and no runtime signal. A colocated
+  `.html.heex` compiles into its module, so the template inherits whichever
+  binding the module ends with. Extract and merge from the repo root
+  (`mix gettext.extract && mix gettext.merge priv/gettext`); `en` is
+  intentionally all-empty (fallback to the msgid). No catalog-data strings
+  need `*_noop` anchors today.
+- JS hooks: one bundle, `priv/static/assets/phoenix_kit_posts.js`, assigning
+  `window.PhoenixKitPostsHooks` and declared by `js_sources/0` (`@impl` is
+  fine — the 2.16 core floor declares the callback). It holds
+  `PhoenixKitPostsMediaInserter`, the post editor's media inserter. Hook names
+  stay namespaced because the fold into `window.PhoenixKitHooks` is
+  last-write-wins across every module's bundle and core's own hooks. Never
+  register a hook or a page helper from an inline `<script>` in a template:
+  morphdom does not execute a script tag it inserts, so it works on a hard
+  page load and is silently dead after any LiveView navigation.
 - `enabled?/0` reads `posts_enabled` and rescues everything to `false` (the
   DB may not be up). The other rescue sites are deliberate and short:
   `count_posts/1` (to `0`), `resolve_comment_resources/1` (to `%{}`),
@@ -190,8 +202,12 @@ host); move its `@must_admit` / `@must_reject` lists together with the pin.
   and reinserts it in a transaction), so a reorder that moves another file
   to position 1 changes the featured image. Content
   image/video insertion into the body is `push_event("insert-media", %{items:
-  [%{url, type}]})` from `Web.Edit`, consumed client-side (see Landmines).
-  File URLs come from core's `Storage.URLSigner`.
+  [%{url, type}]})` from `Web.Edit`. LiveView redispatches a pushed event on
+  `window` as `phx:insert-media`, and the `PhoenixKitPostsMediaInserter` hook
+  — bound to the hidden `#post-content-media-inserter` div in
+  `web/edit.html.heex`, whose `data-editor-id` names the Leaf editor — writes
+  each item into the editor's visual surface, or its markdown textarea as the
+  fallback. File URLs come from core's `Storage.URLSigner`.
 - Authorization in the LiveViews: editing and deleting a post require the
   current user to own it or to hold the admin/owner role
   (`PhoenixKit.Users.Roles`). Tab access is the `"posts"` permission.
@@ -215,18 +231,28 @@ host); move its `@must_admit` / `@must_reject` lists together with the pin.
 
 ### Landmines
 
-- Inserting media into the editor body does nothing after live-navigating
-  into the editor: `web/edit.html.heex` defines `window.postsEditorInsertMedia`
-  and the `phx:insert-media` listener in an inline `<script>`, which morphdom
-  does not execute on navigation. Fix: move both into a hook bundle declared
-  by `js_sources/0` (a page helper today, not a hook, but the same delivery
-  rule applies).
-- Strings in `Web.Posts`, `Web.Edit`, `Web.Details`, `Web.Groups` and
-  `Web.GroupEdit` stay English in `et`/`ru`: only `Web.Settings` rebinds
-  gettext to `PhoenixKitPosts.Gettext`, so `gettext/1` calls elsewhere resolve
-  against core's backend and their msgids are in no catalogue. Fix: add the
-  `use Gettext, backend:` line after `use PhoenixKitWeb, :live_view` and
-  re-extract before adding strings there.
+- A new string renders raw English in `et`/`ru` while every catalogue count
+  says "complete": its `gettext/1` call sits ABOVE the
+  `use Gettext, backend: PhoenixKitPosts.Gettext` line in its module (or the
+  module has none), so it bound to core's backend and its msgid is in no
+  catalogue here. Nothing warns. The check is a code-vs-catalogue diff, not an
+  empty-msgstr count: `grep` the msgids out of `lib/` and look for them in
+  `priv/gettext/default.pot`. This bit every LiveView but `Web.Settings`
+  before 2026-09-08.
+- A hook or page helper that works on a hard reload and does nothing after a
+  live navigation is registered from an inline `<script>` — morphdom does not
+  execute inserted script tags, and the LiveSocket's hook map was fixed at
+  construction (the console reads `unknown hook found for "…"`). This is what
+  killed editor media insertion before 2026-09-08. Everything client-side goes
+  in `priv/static/assets/phoenix_kit_posts.js`.
+- The media inserter is dead in a host that does not run core's
+  `:phoenix_kit_js_sources` compiler: the bundle only reaches the browser
+  through the host's `compilers:` list plus the vendored
+  `/assets/vendor/phoenix_kit_modules.js` script tag. The compiler re-folds on
+  every host `mix compile`, so a deploy that recompiles the host is enough;
+  a host that never registered the compiler gets a compile-time warning from
+  `PhoenixKitWeb.Integration` and nothing else. Since this is the module's
+  first bundle, check that warning on a host before blaming the hook.
 - The module reports itself disabled, every count reads 0, or a suite passes
   while exercising nothing: `enabled?/0` and `count_posts/1` rescue DB errors
   into `false` / `0`. Two causes: `config :phoenix_kit, repo:` missing (the
@@ -268,6 +294,7 @@ lib/
       settings.ex (+ .html.heex)          # the posts_* settings page
       schedule_input.ex                   # datetime-local <-> UTC in the editor's zone
 priv/gettext/                             # default.pot + en/et/ru
+priv/static/assets/phoenix_kit_posts.js   # js_sources/0 bundle: PhoenixKitPostsMediaInserter
 test/support/                             # Test.Repo, DataCase (fixtures + assert_activity_count/3)
 ```
 
@@ -384,6 +411,15 @@ schema.
   activity table are wired before anything relies on them. Slug
   generation tests assert only what holds on every core version (ASCII
   cases), by design.
+- Four source-level guards in `test/phoenix_kit_posts_test.exs` cover the two
+  defect classes that produce no compile error and no runtime signal: every
+  file calling `gettext/1` has the rebinding in its module (templates checked
+  against their companion `.ex`); every `gettext("…")` literal in `lib/` is a
+  msgid in `default.pot` (the code-vs-catalogue diff — an empty-msgstr count
+  cannot see a msgid that went to the wrong backend); `js_sources/0` points at
+  a bundle that really is in `priv/` under a `PhoenixKitPosts*` global; and
+  every `phx-hook="PhoenixKitPosts…"` in a template names a hook the bundle
+  defines. All four fail when broken — verified by breaking them.
 - Known noise: none recorded.
 
 ## Feature notes
@@ -419,12 +455,14 @@ publish has succeeded.
 
 ## TODOs
 
-- Move `window.postsEditorInsertMedia` and the `phx:insert-media` listener
-  out of the inline `<script>` in `web/edit.html.heex` into a bundle declared
-  by `js_sources/0`. Trigger: the next change to the editor's media flow.
-- Rebind gettext in the five LiveViews that still resolve against core's
-  backend, and extract their strings. Trigger: the next user-facing string
-  added or translated outside `Web.Settings`.
+- Translate the `et`/`ru` msgstrs for the six msgids the 2026-09-08 extract
+  added (the `Web.Posts` row actions and `Web.Edit`'s generic save error).
+  They are empty on purpose — English beats an invented translation — so
+  those strings still render English. Trigger: a translator pass.
+- Most user-facing copy in `Web.Posts`, `Web.Edit`, `Web.Details`,
+  `Web.Groups` and `Web.GroupEdit` is still bare literals, not `gettext/1`
+  calls; the backends are now bound correctly, but only 6 strings outside
+  `Web.Settings` are extractable. Trigger: an i18n pass on the admin pages.
 - Drop or repurpose the legacy comment schemas (`PostComment`, `CommentLike`,
   `CommentDislike`) and `PostView`. Trigger: a core migration that retires
   the tables; until then leave the schemas so `Post` still compiles.
