@@ -89,6 +89,11 @@ reverted together with `mix.lock` before committing.
 three-segment core pin (`~> 2.16.x` would exclude the next core minor for every
 host); move its `@must_admit` / `@must_reject` lists together with the pin.
 
+Repo-local aliases:
+
+- `mix quality` — `format` + `credo --strict` + `dialyzer` (applies formatting).
+- `mix quality.ci` — `format --check-formatted` + `credo --strict` + `dialyzer`: it CHECKS formatting rather than applying it, so run `mix format` first.
+
 ## Conventions
 
 - Module key `"posts"` in every callback. Tab ids are prefixed `:admin_posts`
