@@ -422,60 +422,17 @@
     phoenix_kit_current_user={assigns[:phoenix_kit_current_user]}
   />
 
-  <script>
-    // Function to insert media into Leaf editor at cursor position
-    window.postsEditorInsertMedia = function(fileUrl, mediaType) {
-      // Try visual mode first (contenteditable div)
-      const visualEl = document.getElementById('post-content-editor-visual');
-      if (visualEl) {
-        visualEl.focus();
-        const img = document.createElement('img');
-        img.src = fileUrl;
-        img.alt = mediaType === 'image' ? 'Image description' : 'Video';
-        const sel = window.getSelection();
-        if (sel.rangeCount) {
-          const range = sel.getRangeAt(0);
-          range.deleteContents();
-          range.insertNode(img);
-          range.collapse(false);
-        } else {
-          visualEl.appendChild(img);
-        }
-        // Trigger input event so Leaf picks up the change
-        visualEl.dispatchEvent(new Event('input', { bubbles: true }));
-        return;
-      }
-
-      // Markdown mode fallback
-      const textarea = document.getElementById('post-content-editor-markdown-textarea');
-      if (!textarea) return;
-
-      const altText = mediaType === 'image' ? 'Image description' : 'Video';
-      const template = '![' + altText + '](' + fileUrl + ')';
-
-      const start = textarea.selectionStart || 0;
-      const end = textarea.selectionEnd || 0;
-      const currentValue = textarea.value;
-
-      const newValue = currentValue.substring(0, start) + template + currentValue.substring(end);
-      textarea.value = newValue;
-
-      const newPos = start + template.length;
-      textarea.selectionStart = textarea.selectionEnd = newPos;
-      textarea.focus();
-
-      textarea.dispatchEvent(new Event('input', { bubbles: true }));
-    };
-
-    // Handle media insertion event from server
-    window.addEventListener("phx:insert-media", (e) => {
-      if (e.detail && e.detail.items) {
-        e.detail.items.forEach(function(item) {
-          if (window.postsEditorInsertMedia) {
-            window.postsEditorInsertMedia(item.url, item.type);
-          }
-        });
-      }
-    });
-  </script>
+  <%!-- Receives `push_event("insert-media", …)` and writes the media into the
+       Leaf editor named by data-editor-id. The hook lives in this module's
+       bundle (priv/static/assets/phoenix_kit_posts.js, declared by
+       PhoenixKitPosts.js_sources/0), NOT in an inline <script>: morphdom does
+       not execute a script tag it inserts, so an inline version works on a
+       hard load and is dead after any live_redirect into the editor. --%>
+  <div
+    id="post-content-media-inserter"
+    phx-hook="PhoenixKitPostsMediaInserter"
+    data-editor-id="post-content-editor"
+    hidden
+  >
+  </div>
 
