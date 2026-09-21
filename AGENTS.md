@@ -146,15 +146,14 @@ Repo-local aliases:
   `log_post_activity/4` (to `:ok`) and `Post.unique_slug/2` (to the
   unsuffixed slug). Everything else raises; do not add blanket rescues.
   `PhoenixKit.RepoHelper.repo/0` is the only repo access.
-- Activity logging: `log_post_activity/4` writes `PhoenixKit.Activity.log/1`
+- Activity logging: `log_post_activity/4` writes `PhoenixKit.Activity.log/3`
   entries with `module: "posts"`, `mode: "auto"`, `resource_type: "post"`,
   `resource_uuid`, and metadata `%{"actor_role" => "user", "title" => title}`.
   Actions are `post.created`, `post.published`, `post.deleted` (updates are
   not logged). The actor is the creator for `created`; for `published` and
   `deleted` it is the `:actor_uuid` option when the caller passes one (the
-  admin LiveViews pass the current user), else the post's author. Guarded
-  with `Code.ensure_loaded?(PhoenixKit.Activity)` and rescued, so logging can
-  never fail the post operation. Metadata carries the title and nothing else
+  admin LiveViews pass `PhoenixKitWeb.Actor.opts/1`), else the post's author.
+  Core's log never raises, so logging can never fail the post operation. Metadata carries the title and nothing else
   about the user.
 - Soft delete: none. `delete_post/2` is a hard delete; the FK cascades remove
   media, likes, assignments and mentions.

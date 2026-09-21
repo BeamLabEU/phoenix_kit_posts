@@ -44,6 +44,7 @@ defmodule PhoenixKitPosts.Web.Posts do
 
   alias PhoenixKit.Settings
   alias PhoenixKit.Utils.Routes
+  alias PhoenixKitWeb.Actor
 
   @max_per_page 100
 
@@ -147,7 +148,7 @@ defmodule PhoenixKitPosts.Web.Posts do
         {:noreply, socket |> put_flash(:error, "Post not found")}
 
       post ->
-        case PhoenixKitPosts.delete_post(post, actor_opts(socket)) do
+        case PhoenixKitPosts.delete_post(post, Actor.opts(socket)) do
           {:ok, _} ->
             {:noreply,
              socket
@@ -168,7 +169,7 @@ defmodule PhoenixKitPosts.Web.Posts do
         {:noreply, socket |> put_flash(:error, "Post not found")}
 
       post ->
-        case PhoenixKitPosts.publish_post(post, actor_opts(socket)) do
+        case PhoenixKitPosts.publish_post(post, Actor.opts(socket)) do
           {:ok, _} ->
             {:noreply,
              socket
@@ -210,7 +211,7 @@ defmodule PhoenixKitPosts.Web.Posts do
 
   @impl true
   def handle_event("bulk_publish", %{"uuids" => uuids}, socket) do
-    actor_opts = actor_opts(socket)
+    actor_opts = Actor.opts(socket)
 
     count =
       Enum.reduce(uuids, 0, fn post_uuid, acc ->
@@ -235,7 +236,7 @@ defmodule PhoenixKitPosts.Web.Posts do
 
   @impl true
   def handle_event("bulk_delete", %{"uuids" => uuids}, socket) do
-    actor_opts = actor_opts(socket)
+    actor_opts = Actor.opts(socket)
 
     count =
       Enum.reduce(uuids, 0, fn post_uuid, acc ->
@@ -291,12 +292,6 @@ defmodule PhoenixKitPosts.Web.Posts do
   # Records the acting admin as the activity actor for owner-context operations
   # (publish/delete). Without this the feed would attribute admin moderation to
   # the post's author. Falls back to an empty list (author) if no current user.
-  defp actor_opts(socket) do
-    case socket.assigns[:current_user] do
-      %{uuid: uuid} -> [actor_uuid: uuid]
-      _ -> []
-    end
-  end
 
   defp assign_filter_defaults(socket) do
     socket

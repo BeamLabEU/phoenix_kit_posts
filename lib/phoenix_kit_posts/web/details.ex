@@ -37,6 +37,7 @@ defmodule PhoenixKitPosts.Web.Details do
   alias PhoenixKit.Users.Roles
   alias PhoenixKit.Utils.HtmlSanitizer
   alias PhoenixKit.Utils.Routes
+  alias PhoenixKitWeb.Actor
 
   @post_preloads [:user, [media: :file], :tags, :groups, :mentions]
 
@@ -125,7 +126,7 @@ defmodule PhoenixKitPosts.Web.Details do
 
   @impl true
   def handle_event("delete_post", _params, socket) do
-    case PhoenixKitPosts.delete_post(socket.assigns.post, actor_opts(socket)) do
+    case PhoenixKitPosts.delete_post(socket.assigns.post, Actor.opts(socket)) do
       {:ok, _} ->
         {:noreply,
          socket
@@ -167,12 +168,6 @@ defmodule PhoenixKitPosts.Web.Details do
   # Records the acting admin as the activity actor for owner-context operations
   # (delete). Without this the feed would attribute admin moderation to the
   # post's author. Falls back to an empty list (author) if no current user.
-  defp actor_opts(socket) do
-    case socket.assigns[:current_user] do
-      %{uuid: uuid} -> [actor_uuid: uuid]
-      _ -> []
-    end
-  end
 
   defp user_is_admin?(user) do
     Roles.user_has_role_owner?(user) or Roles.user_has_role_admin?(user)
