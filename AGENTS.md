@@ -142,9 +142,9 @@ Repo-local aliases:
   page load and is silently dead after any LiveView navigation.
 - `enabled?/0` reads `posts_enabled` and rescues everything to `false` (the
   DB may not be up). The other rescue sites are deliberate and short:
-  `count_posts/1` (to `0`), `resolve_comment_resources/1` (to `%{}`),
-  `log_post_activity/4` (to `:ok`) and `Post.unique_slug/2` (to the
-  unsuffixed slug). Everything else raises; do not add blanket rescues.
+  `count_posts/1` (to `0`), `resolve_comment_resources/1` (to `%{}`)
+  and `Post.unique_slug/2` (to the unsuffixed slug); activity logging
+  needs none, since core's `log/3` never raises. Everything else raises; do not add blanket rescues.
   `PhoenixKit.RepoHelper.repo/0` is the only repo access.
 - Activity logging: `log_post_activity/4` writes `PhoenixKit.Activity.log/3`
   entries with `module: "posts"`, `mode: "auto"`, `resource_type: "post"`,

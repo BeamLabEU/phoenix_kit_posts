@@ -289,10 +289,6 @@ defmodule PhoenixKitPosts.Web.Posts do
     Settings.get_setting_cached("posts_enabled", "true") == "true"
   end
 
-  # Records the acting admin as the activity actor for owner-context operations
-  # (publish/delete). Without this the feed would attribute admin moderation to
-  # the post's author. Falls back to an empty list (author) if no current user.
-
   defp assign_filter_defaults(socket) do
     socket
     |> assign(:filter_type, "all")

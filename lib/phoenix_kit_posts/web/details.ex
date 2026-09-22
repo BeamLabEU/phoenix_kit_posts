@@ -165,10 +165,6 @@ defmodule PhoenixKitPosts.Web.Details do
 
   ## --- Private Helper Functions ---
 
-  # Records the acting admin as the activity actor for owner-context operations
-  # (delete). Without this the feed would attribute admin moderation to the
-  # post's author. Falls back to an empty list (author) if no current user.
-
   defp user_is_admin?(user) do
     Roles.user_has_role_owner?(user) or Roles.user_has_role_admin?(user)
   end
