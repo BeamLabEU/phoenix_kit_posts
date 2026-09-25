@@ -62,7 +62,8 @@ defmodule PhoenixKitPosts.Web.Posts do
 
       socket =
         socket
-        |> assign(:page_title, "Posts")
+        # Landing page: the module is the title, no section (admin header trail).
+        |> assign(:page_title, gettext("Posts"))
         |> assign(:page_subtitle, "Manage and organize your social posts")
         |> assign(:project_title, project_title)
         |> assign(:current_user, current_user)

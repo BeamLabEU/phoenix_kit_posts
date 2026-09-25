@@ -34,11 +34,16 @@ defmodule PhoenixKitPosts.Web.Settings do
   use Gettext, backend: PhoenixKitPosts.Gettext
 
   alias PhoenixKit.Settings
+  alias PhoenixKit.Utils.Routes
 
   def mount(_params, _session, socket) do
     socket =
       socket
-      |> assign(:page_title, gettext("Posts Settings"))
+      # Trail: Admin Panel / Settings / Posts — the page lives in Settings.
+      |> assign(:page_title, gettext("Posts"))
+      |> assign(:page_section, gettext("Settings"))
+      |> assign(:page_section_path, Routes.path("/admin/settings"))
+      |> assign(:page_crumbs, [])
       |> assign(:page_subtitle, gettext("Configure posts module behavior, limits, and features"))
       |> assign(:project_title, Settings.get_project_title())
       |> assign(:saving, false)

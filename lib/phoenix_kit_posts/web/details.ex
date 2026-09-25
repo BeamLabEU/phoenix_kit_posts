@@ -45,7 +45,11 @@ defmodule PhoenixKitPosts.Web.Details do
   def mount(_params, _session, socket) do
     socket =
       socket
-      |> assign(:page_title, "Post")
+      # Trail: Admin Panel / Posts / <post title>; the title lands in handle_params.
+      |> assign(:page_title, gettext("Post"))
+      |> assign(:page_section, gettext("Posts"))
+      |> assign(:page_section_path, Routes.path("/admin/posts"))
+      |> assign(:page_crumbs, [])
       |> assign(:project_title, Settings.get_project_title())
       |> assign(:current_user, socket.assigns[:phoenix_kit_current_user])
       |> assign(:post, nil)
