@@ -87,7 +87,12 @@ defmodule PhoenixKitPosts.MixProject do
       # plausible nothing. 2.16 also clears `Utils.TimeZone.valid?/1` and
       # `from_wall/2` (2.13.9), which `Post.changeset/2` and the schedule
       # input call on every save.
-      pk_dep(:phoenix_kit, "~> 2.16"),
+      # 2.38.0 is the floor now: the actor and the activity log come from
+      # `PhoenixKitWeb.Actor` and `PhoenixKit.Activity.log/3`, first shipped
+      # there and no longer feature-detected, so a lower core fails to compile.
+      # Patch-precise floor in the compound form, so the ceiling stays open
+      # through every later 2.x minor (see test/core_pin_conformance_test.exs).
+      pk_dep(:phoenix_kit, ">= 2.38.0 and < 3.0.0"),
       # Comments module for post detail page comments section. 0.2.6 is the
       # floor: `Web.Details` does `use PhoenixKitComments.Embed`, which that
       # release first published. The `use` is unguarded, so 0.2.0–0.2.5 fails
