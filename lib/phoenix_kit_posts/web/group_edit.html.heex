@@ -1,7 +1,13 @@
   <div class="container flex flex-col mx-auto px-4 py-6">
     <%!-- Header Section --%>
     <.admin_page_header back={Routes.path("/admin/posts/groups")}>
-      <h1 class="text-xl sm:text-2xl lg:text-3xl font-bold text-base-content">{@page_title}</h1>
+      <h1 class="text-xl sm:text-2xl lg:text-3xl font-bold text-base-content">
+        <%= if @group.uuid do %>
+          {gettext("Edit group")}
+        <% else %>
+          {gettext("New group")}
+        <% end %>
+      </h1>
       <p class="text-sm text-base-content/60 mt-0.5">
         <%= if @group.uuid do %>
           Edit your group details and settings

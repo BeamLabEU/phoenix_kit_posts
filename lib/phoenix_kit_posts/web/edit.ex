@@ -50,7 +50,12 @@ defmodule PhoenixKitPosts.Web.Edit do
   def mount(_params, _session, socket) do
     socket =
       socket
-      |> assign(:page_title, "Post")
+      # Trail: Admin Panel / Posts / New post, or / Posts / <post> / Edit;
+      # title and crumbs land in handle_params.
+      |> assign(:page_title, gettext("Post"))
+      |> assign(:page_section, gettext("Posts"))
+      |> assign(:page_section_path, Routes.path("/admin/posts"))
+      |> assign(:page_crumbs, [])
       |> assign(:project_title, Settings.get_project_title())
       |> assign(:current_user, socket.assigns[:phoenix_kit_current_user])
       |> assign(:post, nil)
@@ -84,7 +89,10 @@ defmodule PhoenixKitPosts.Web.Edit do
 
           {:noreply,
            socket
-           |> assign(:page_title, "Edit Post")
+           |> assign(:page_title, gettext("Edit"))
+           |> assign(:page_crumbs, [
+             %{label: post.title, path: Routes.path("/admin/posts/#{post.uuid}")}
+           ])
            |> assign(:post, post)
            |> assign(:form, Component.to_form(form_data, as: :post))
            |> assign(:content, post.content || "")
@@ -111,7 +119,8 @@ defmodule PhoenixKitPosts.Web.Edit do
 
     {:noreply,
      socket
-     |> assign(:page_title, "New Post")
+     |> assign(:page_title, gettext("New post"))
+     |> assign(:page_crumbs, [])
      |> assign(:post, %{uuid: nil, user_uuid: current_user.uuid})
      |> assign(:form, Component.to_form(form_data, as: :post))
      |> assign(:content, "")

@@ -37,6 +37,7 @@ defmodule PhoenixKitPosts.Web.Details do
   alias PhoenixKit.Users.Roles
   alias PhoenixKit.Utils.HtmlSanitizer
   alias PhoenixKit.Utils.Routes
+  alias PhoenixKitWeb.Actor
 
   @post_preloads [:user, [media: :file], :tags, :groups, :mentions]
 
@@ -44,7 +45,11 @@ defmodule PhoenixKitPosts.Web.Details do
   def mount(_params, _session, socket) do
     socket =
       socket
-      |> assign(:page_title, "Post")
+      # Trail: Admin Panel / Posts / <post title>; the title lands in handle_params.
+      |> assign(:page_title, gettext("Post"))
+      |> assign(:page_section, gettext("Posts"))
+      |> assign(:page_section_path, Routes.path("/admin/posts"))
+      |> assign(:page_crumbs, [])
       |> assign(:project_title, Settings.get_project_title())
       |> assign(:current_user, socket.assigns[:phoenix_kit_current_user])
       |> assign(:post, nil)
@@ -125,7 +130,7 @@ defmodule PhoenixKitPosts.Web.Details do
 
   @impl true
   def handle_event("delete_post", _params, socket) do
-    case PhoenixKitPosts.delete_post(socket.assigns.post, actor_opts(socket)) do
+    case PhoenixKitPosts.delete_post(socket.assigns.post, Actor.opts(socket)) do
       {:ok, _} ->
         {:noreply,
          socket
@@ -163,16 +168,6 @@ defmodule PhoenixKitPosts.Web.Details do
   end
 
   ## --- Private Helper Functions ---
-
-  # Records the acting admin as the activity actor for owner-context operations
-  # (delete). Without this the feed would attribute admin moderation to the
-  # post's author. Falls back to an empty list (author) if no current user.
-  defp actor_opts(socket) do
-    case socket.assigns[:current_user] do
-      %{uuid: uuid} -> [actor_uuid: uuid]
-      _ -> []
-    end
-  end
 
   defp user_is_admin?(user) do
     Roles.user_has_role_owner?(user) or Roles.user_has_role_admin?(user)

@@ -51,7 +51,7 @@ msgstr "Loo postituse pealkirjast automaatselt URL-sõbralik aadressilõpp"
 msgid "Configuration"
 msgstr "Seadistus"
 
-#: lib/phoenix_kit_posts/web/settings.ex:42
+#: lib/phoenix_kit_posts/web/settings.ex:47
 #: lib/phoenix_kit_posts/web/settings.html.heex:5
 #, elixir-autogen, elixir-format
 msgid "Configure posts module behavior, limits, and features"
@@ -102,7 +102,7 @@ msgstr "Luba teiste kasutajate postituste jagamine"
 msgid "Enable user-specific post collections (Pinterest-style)"
 msgstr "Luba kasutajapõhised postituste kogumikud (Pinteresti stiilis)"
 
-#: lib/phoenix_kit_posts/web/settings.ex:75
+#: lib/phoenix_kit_posts/web/settings.ex:80
 #, elixir-autogen, elixir-format
 msgid "Failed to save some settings"
 msgstr "Osa seadete salvestamine ebaõnnestus"
@@ -187,7 +187,6 @@ msgstr "Lehel kuvatavate postituste arv (5–100)"
 msgid "Posts Per Page"
 msgstr "Postitusi lehe kohta"
 
-#: lib/phoenix_kit_posts/web/settings.ex:41
 #: lib/phoenix_kit_posts/web/settings.html.heex:4
 #, elixir-autogen, elixir-format
 msgid "Posts Settings"
@@ -223,12 +222,12 @@ msgstr "Salvesta seaded"
 msgid "Saving..."
 msgstr "Salvestamine..."
 
-#: lib/phoenix_kit_posts/web/settings.ex:112
+#: lib/phoenix_kit_posts/web/settings.ex:117
 #, elixir-autogen, elixir-format
 msgid "Settings reset to defaults"
 msgstr "Seaded lähtestati vaikeväärtustele"
 
-#: lib/phoenix_kit_posts/web/settings.ex:72
+#: lib/phoenix_kit_posts/web/settings.ex:77
 #, elixir-autogen, elixir-format
 msgid "Settings saved successfully"
 msgstr "Seaded salvestati edukalt"
@@ -267,7 +266,7 @@ msgstr ""
 msgid "Publish post"
 msgstr ""
 
-#: lib/phoenix_kit_posts/web/edit.ex:450
+#: lib/phoenix_kit_posts/web/edit.ex:460
 #, elixir-autogen, elixir-format
 msgid "Something went wrong. Please try again."
 msgstr ""
@@ -277,3 +276,57 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "View post"
 msgstr ""
+
+#: lib/phoenix_kit_posts/web/edit.ex:92
+#: lib/phoenix_kit_posts/web/group_edit.ex:123
+#, elixir-autogen, elixir-format
+msgid "Edit"
+msgstr "Muuda"
+
+#: lib/phoenix_kit_posts/web/group_edit.html.heex:6
+#, elixir-autogen, elixir-format
+msgid "Edit group"
+msgstr "Muuda gruppi"
+
+#: lib/phoenix_kit_posts/web/group_edit.ex:45
+#, elixir-autogen, elixir-format
+msgid "Group"
+msgstr "Grupp"
+
+#: lib/phoenix_kit_posts/web/group_edit.ex:77
+#: lib/phoenix_kit_posts/web/groups.ex:42
+#, elixir-autogen, elixir-format
+msgid "Groups"
+msgstr "Grupid"
+
+#: lib/phoenix_kit_posts/web/group_edit.ex:91
+#: lib/phoenix_kit_posts/web/group_edit.html.heex:8
+#, elixir-autogen, elixir-format
+msgid "New group"
+msgstr "Uus grupp"
+
+#: lib/phoenix_kit_posts/web/edit.ex:122
+#, elixir-autogen, elixir-format
+msgid "New post"
+msgstr "Uus postitus"
+
+#: lib/phoenix_kit_posts/web/details.ex:49
+#: lib/phoenix_kit_posts/web/edit.ex:55
+#, elixir-autogen, elixir-format
+msgid "Post"
+msgstr "Postitus"
+
+#: lib/phoenix_kit_posts/web/details.ex:50
+#: lib/phoenix_kit_posts/web/edit.ex:56
+#: lib/phoenix_kit_posts/web/group_edit.ex:46
+#: lib/phoenix_kit_posts/web/groups.ex:43
+#: lib/phoenix_kit_posts/web/posts.ex:66
+#: lib/phoenix_kit_posts/web/settings.ex:43
+#, elixir-autogen, elixir-format
+msgid "Posts"
+msgstr "Postitused"
+
+#: lib/phoenix_kit_posts/web/settings.ex:44
+#, elixir-autogen, elixir-format
+msgid "Settings"
+msgstr "Seaded"

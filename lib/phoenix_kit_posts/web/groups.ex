@@ -38,7 +38,11 @@ defmodule PhoenixKitPosts.Web.Groups do
     if Settings.get_boolean_setting("posts_allow_groups", true) do
       socket =
         socket
-        |> assign(:page_title, "Post Groups")
+        # Trail: Admin Panel / Posts / Groups.
+        |> assign(:page_title, gettext("Groups"))
+        |> assign(:page_section, gettext("Posts"))
+        |> assign(:page_section_path, Routes.path("/admin/posts"))
+        |> assign(:page_crumbs, [])
         |> assign(:page_subtitle, "Organize your posts into collections")
         |> assign(:project_title, Settings.get_project_title())
         |> assign(:current_user, socket.assigns[:phoenix_kit_current_user])

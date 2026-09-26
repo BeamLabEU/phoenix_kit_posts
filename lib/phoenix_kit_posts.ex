@@ -1681,32 +1681,23 @@ defmodule PhoenixKitPosts do
 
   # Records a deep-linkable post action in PhoenixKit's activity feed. The entry
   # carries `resource_type: "post"` + the post uuid, so the feed resolves it to
-  # the post's page via `resolve_comment_resources/1`. Guarded so posts keeps
-  # working if core's Activity module isn't loaded, and rescued so a logging
-  # failure never breaks the underlying post operation.
+  # the post's page via `resolve_comment_resources/1`. Core's log never raises,
+  # so a logging failure never breaks the underlying post operation.
   defp log_post_activity(action, post_uuid, title, actor_uuid) do
-    if Code.ensure_loaded?(PhoenixKit.Activity) do
-      metadata =
-        if title,
-          do: %{"actor_role" => "user", "title" => title},
-          else: %{"actor_role" => "user"}
+    metadata =
+      if title,
+        do: %{"actor_role" => "user", "title" => title},
+        else: %{"actor_role" => "user"}
 
-      PhoenixKit.Activity.log(%{
-        action: action,
-        module: "posts",
-        mode: "auto",
-        actor_uuid: actor_uuid,
-        resource_type: "post",
-        resource_uuid: post_uuid,
-        metadata: metadata
-      })
-    end
+    PhoenixKit.Activity.log("posts", action,
+      mode: "auto",
+      actor_uuid: actor_uuid,
+      resource_type: "post",
+      resource_uuid: post_uuid,
+      metadata: metadata
+    )
 
     :ok
-  rescue
-    e ->
-      Logger.warning("[Posts] Failed to log activity #{action}: #{Exception.message(e)}")
-      :ok
   end
 
   # Actor for owner-context actions (publish/delete): an explicit `:actor_uuid`

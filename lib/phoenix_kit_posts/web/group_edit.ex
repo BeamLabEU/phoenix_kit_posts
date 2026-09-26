@@ -39,7 +39,13 @@ defmodule PhoenixKitPosts.Web.GroupEdit do
     if Settings.get_boolean_setting("posts_allow_groups", true) do
       socket =
         socket
-        |> assign(:page_title, "Group")
+        # Trail: Admin Panel / Posts / Groups / New group, or
+        # / Posts / Groups / <group> / Edit. A group has no page of its own,
+        # so its crumb is text. Title and crumbs land in handle_params.
+        |> assign(:page_title, gettext("Group"))
+        |> assign(:page_section, gettext("Posts"))
+        |> assign(:page_section_path, Routes.path("/admin/posts"))
+        |> assign(:page_crumbs, [groups_crumb()])
         |> assign(:project_title, Settings.get_project_title())
         |> assign(:current_user, socket.assigns[:phoenix_kit_current_user])
         |> assign(:group, nil)
@@ -67,6 +73,10 @@ defmodule PhoenixKitPosts.Web.GroupEdit do
      )}
   end
 
+  defp groups_crumb do
+    %{label: gettext("Groups"), path: Routes.path("/admin/posts/groups")}
+  end
+
   defp load_group_form(socket, nil, current_user, project_title) do
     form_data = %{
       "name" => "",
@@ -78,7 +88,8 @@ defmodule PhoenixKitPosts.Web.GroupEdit do
     form = Component.to_form(form_data, as: :post_group)
 
     socket
-    |> assign(:page_title, "New Group")
+    |> assign(:page_title, gettext("New group"))
+    |> assign(:page_crumbs, [groups_crumb()])
     |> assign(:project_title, project_title)
     |> assign(:group, %{uuid: nil, user_uuid: current_user.uuid})
     |> assign(:form, form)
@@ -109,7 +120,8 @@ defmodule PhoenixKitPosts.Web.GroupEdit do
       form = Component.to_form(form_data, as: :post_group)
 
       socket
-      |> assign(:page_title, "Edit Group")
+      |> assign(:page_title, gettext("Edit"))
+      |> assign(:page_crumbs, [groups_crumb(), %{label: group.name}])
       |> assign(:project_title, project_title)
       |> assign(:group, group)
       |> assign(:form, form)

@@ -14,7 +14,7 @@ callbacks. `PhoenixKitPosts` is both the `PhoenixKit.Module` implementation
 and the context module for every post operation. This is a library, not a
 standalone Phoenix app.
 
-- **Depends on:** `phoenix_kit` `~> 2.16` (Hex; a hard floor, because core's
+- **Depends on:** `phoenix_kit` `>= 2.38.0 and < 3.0.0` (Hex; a hard floor, because core's
   chain adds `phoenix_kit_posts.time_zone` at V185 and `Post` maps it, so
   every read and write of the table fails with `42703 undefined_column` on an
   older core, and because `Post.changeset/2` and `Web.ScheduleInput` call
@@ -89,7 +89,7 @@ plain Hex pin, so a local comments checkout means a temporary
 `{:phoenix_kit_comments, path: "../phoenix_kit_comments", override: true}`
 reverted together with `mix.lock` before committing.
 `test/core_pin_conformance_test.exs` fails on a committed `path:` dep and on a
-three-segment core pin (`~> 2.16.x` would exclude the next core minor for every
+three-segment core pin (`~> 2.38.0` would exclude the next core minor for every
 host); move its `@must_admit` / `@must_reject` lists together with the pin.
 
 Repo-local aliases:
@@ -142,19 +142,18 @@ Repo-local aliases:
   page load and is silently dead after any LiveView navigation.
 - `enabled?/0` reads `posts_enabled` and rescues everything to `false` (the
   DB may not be up). The other rescue sites are deliberate and short:
-  `count_posts/1` (to `0`), `resolve_comment_resources/1` (to `%{}`),
-  `log_post_activity/4` (to `:ok`) and `Post.unique_slug/2` (to the
-  unsuffixed slug). Everything else raises; do not add blanket rescues.
+  `count_posts/1` (to `0`), `resolve_comment_resources/1` (to `%{}`)
+  and `Post.unique_slug/2` (to the unsuffixed slug); activity logging
+  needs none, since core's `log/3` never raises. Everything else raises; do not add blanket rescues.
   `PhoenixKit.RepoHelper.repo/0` is the only repo access.
-- Activity logging: `log_post_activity/4` writes `PhoenixKit.Activity.log/1`
+- Activity logging: `log_post_activity/4` writes `PhoenixKit.Activity.log/3`
   entries with `module: "posts"`, `mode: "auto"`, `resource_type: "post"`,
   `resource_uuid`, and metadata `%{"actor_role" => "user", "title" => title}`.
   Actions are `post.created`, `post.published`, `post.deleted` (updates are
   not logged). The actor is the creator for `created`; for `published` and
   `deleted` it is the `:actor_uuid` option when the caller passes one (the
-  admin LiveViews pass the current user), else the post's author. Guarded
-  with `Code.ensure_loaded?(PhoenixKit.Activity)` and rescued, so logging can
-  never fail the post operation. Metadata carries the title and nothing else
+  admin LiveViews pass `PhoenixKitWeb.Actor.opts/1`), else the post's author.
+  Core's log never raises, so logging can never fail the post operation. Metadata carries the title and nothing else
   about the user.
 - Soft delete: none. `delete_post/2` is a hard delete; the FK cascades remove
   media, likes, assignments and mentions.
