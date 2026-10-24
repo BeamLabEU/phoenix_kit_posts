@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.6.0 - 2026-10-24
+
+### Changed
+
+- **The `phoenix_kit` floor is now `>= 2.38.0 and < 3.0.0`, and it is a hard
+  one.** The acting user and the activity log now come from core's
+  `PhoenixKitWeb.Actor` and `PhoenixKit.Activity.log/3`, both first shipped in
+  2.38.0 and no longer feature-detected, so an older core fails to compile.
+  The ceiling stays open through every later 2.x minor. Who is recorded as
+  the actor of a publish or delete is unchanged. (#21)
+- **Every posts admin page sets the admin header trail**: Posts, Posts /
+  Groups, Posts / New post, Posts / *post* / Edit, Posts / Groups / New group or
+  *group* / Edit, and Settings / Posts. Page titles are now translated (et,
+  ru). (#21)
+- Locked dependencies refreshed (`phoenix_kit` 2.64.1).
+
 ## 0.5.0 - 2026-09-16
 
 ### Changed
