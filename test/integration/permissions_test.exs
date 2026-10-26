@@ -250,6 +250,40 @@ defmodule PhoenixKitPosts.Integration.PermissionsTest do
       assert private.uuid in Enum.map(all, & &1.uuid)
     end
 
+    # Renders the page and reads the two real elements: the Group filter
+    # <select> lists every board the viewer may see, the "Add to group"
+    # menu only those they may add to.
+    test "the filter lists visible boards, the add menu only the viewer's own", ctx do
+      public = group!(ctx.author, %{is_public: true})
+      private = group!(ctx.author, %{is_public: false})
+      mine = group!(ctx.other, %{is_public: false})
+
+      html =
+        ctx.other
+        |> scope_for(["posts", "posts.view_all"])
+        |> loaded()
+        |> Map.fetch!(:assigns)
+        |> Map.merge(%{url_path: "/admin/posts", current_locale: "en", flash: %{}})
+        |> Web.Posts.render()
+        |> Phoenix.LiveViewTest.rendered_to_string()
+
+      # No HTML parser in this suite's deps: cut the <select> out first, so an
+      # <option> elsewhere on the page cannot satisfy the filter assertion.
+      [select] = Regex.run(~r|<select name="filter\[group\]">.*?</select>|s, html)
+      filter = Regex.scan(~r|<option value="([^"]+)"|, select, capture: :all_but_first)
+      filter = List.flatten(filter)
+
+      add =
+        ~r|phx-click="bulk_add_to_group"[^>]*phx-value-group_uuid="([^"]+)"|
+        |> Regex.scan(html, capture: :all_but_first)
+        |> List.flatten()
+
+      assert public.uuid in filter
+      assert private.uuid in filter
+      assert mine.uuid in filter
+      assert add == [mine.uuid]
+    end
+
     test "adding posts to someone else's board needs posts.manage_all", ctx do
       theirs = group!(ctx.author, %{is_public: true})
       post = post_fixture(ctx.other)

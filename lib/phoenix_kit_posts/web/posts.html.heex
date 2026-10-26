@@ -102,7 +102,7 @@
             <label class="select w-full">
               <select name="filter[group]">
                 <option value="all" selected={@filter_group == "all"}>All Groups</option>
-                <%= for group <- @target_groups do %>
+                <%= for group <- @groups do %>
                   <option value={group.uuid} selected={@filter_group == group.uuid}>
                     {group.name}
                   </option>
@@ -160,7 +160,7 @@
               tabindex="0"
               class="dropdown-content menu bg-base-100 rounded-box z-10 w-52 p-2 shadow-sm"
             >
-              <%= for group <- @groups do %>
+              <%= for group <- @target_groups do %>
                 <li>
                   <button phx-click="bulk_add_to_group" phx-value-group_uuid={group.uuid}>
                     {group.name}
