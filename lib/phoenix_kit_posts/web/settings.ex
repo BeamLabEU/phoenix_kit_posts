@@ -113,8 +113,17 @@ defmodule PhoenixKitPosts.Web.Settings do
 
     settings =
       case Map.get(params, "settings") do
-        %{} = submitted -> Map.take(submitted, Map.keys(@defaults))
-        _ -> %{}
+        # Only this page's keys, and only scalar values: a crafted list or
+        # map would otherwise reach `to_string/1` and crash the event.
+        %{} = submitted ->
+          submitted
+          |> Map.take(Map.keys(@defaults))
+          |> Map.filter(fn {_key, value} ->
+            is_binary(value) or is_number(value) or is_boolean(value)
+          end)
+
+        _ ->
+          %{}
       end
 
     # Update all settings
@@ -141,7 +150,7 @@ defmodule PhoenixKitPosts.Web.Settings do
 
   defp handle_settings_event("reset_defaults", _params, socket) do
     Enum.each(@defaults, fn {key, value} ->
-      Settings.update_setting(key, value)
+      Settings.update_setting(key, to_string(value))
     end)
 
     {:noreply,

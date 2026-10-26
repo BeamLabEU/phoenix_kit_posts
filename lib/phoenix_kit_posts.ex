@@ -1486,12 +1486,15 @@ defmodule PhoenixKitPosts do
   end
 
   @doc """
-  Lists all groups ordered by name.
+  Lists groups ordered by name: every group, or with `visible_to: user_uuid`
+  only that user's own groups and public ones (`is_public`). A nil uuid keeps
+  public groups only.
   """
   def list_groups(opts \\ []) do
     preloads = Keyword.get(opts, :preload, [])
 
     from(g in PostGroup, order_by: [asc: g.name])
+    |> maybe_groups_visible_to(Keyword.get(opts, :visible_to, :all))
     |> repo().all()
     |> repo().preload(preloads)
   end
@@ -1707,6 +1710,13 @@ defmodule PhoenixKitPosts do
 
   defp maybe_filter_by_user(query, user_uuid) when is_binary(user_uuid) do
     where(query, [p], p.user_uuid == ^user_uuid)
+  end
+
+  defp maybe_groups_visible_to(query, :all), do: query
+  defp maybe_groups_visible_to(query, nil), do: where(query, [g], g.is_public == true)
+
+  defp maybe_groups_visible_to(query, user_uuid) when is_binary(user_uuid) do
+    where(query, [g], g.user_uuid == ^user_uuid or g.is_public == true)
   end
 
   # `:all` (the option absent) leaves the query alone. A nil uuid (no

@@ -74,6 +74,7 @@ defmodule PhoenixKitPosts.Web.Posts do
         |> assign(:loading, true)
         |> assign(:bulk_uuids, [])
         |> assign(:groups, [])
+        |> assign(:target_groups, [])
         |> assign_filter_defaults()
         |> assign_pagination_defaults()
 
@@ -270,15 +271,14 @@ defmodule PhoenixKitPosts.Web.Posts do
       |> List.wrap()
       |> Enum.filter(&match?({:ok, _}, fetch_manageable_post(socket, &1)))
 
-    case PhoenixKitPosts.add_posts_to_group(post_uuids, group_uuid) do
-      {:ok, count} ->
-        {:noreply,
-         socket
-         |> put_flash(:info, "Added #{count} post(s) to group")
-         |> load_posts()}
+    group = is_binary(group_uuid) && PhoenixKitPosts.get_group(group_uuid)
+    scope = socket.assigns[:phoenix_kit_current_scope]
 
-      {:error, _reason} ->
-        {:noreply, socket |> put_flash(:error, "Failed to add posts to group")}
+    if group && Access.can_add_to_group?(scope, group) do
+      add_to_group(socket, post_uuids, group.uuid)
+    else
+      {:noreply,
+       put_flash(socket, :error, gettext("You don't have permission to add posts to this group"))}
     end
   end
 
@@ -293,6 +293,19 @@ defmodule PhoenixKitPosts.Web.Posts do
   end
 
   ## --- Private Helper Functions ---
+
+  defp add_to_group(socket, post_uuids, group_uuid) do
+    case PhoenixKitPosts.add_posts_to_group(post_uuids, group_uuid) do
+      {:ok, count} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Added #{count} post(s) to group")
+         |> load_posts()}
+
+      {:error, _reason} ->
+        {:noreply, socket |> put_flash(:error, "Failed to add posts to group")}
+    end
+  end
 
   # The post behind `post_uuid`, when this user may change it: their own
   # post, or anyone's with `posts.manage_all` (see PhoenixKitPosts.Access).
@@ -399,8 +412,15 @@ defmodule PhoenixKitPosts.Web.Posts do
     assign(socket, :stats, stats)
   end
 
+  # Other users' private boards only with `posts.view_all`; posts can be
+  # added only to the viewer's own boards, or any with `posts.manage_all`.
   defp load_groups(socket) do
-    assign(socket, :groups, PhoenixKitPosts.list_groups())
+    scope = socket.assigns[:phoenix_kit_current_scope]
+    groups = PhoenixKitPosts.list_groups(Access.group_list_opts(scope))
+
+    socket
+    |> assign(:groups, groups)
+    |> assign(:target_groups, Access.target_groups(scope, groups))
   end
 
   defp maybe_add_filter(opts, _key, "all"), do: opts

@@ -216,6 +216,69 @@ defmodule PhoenixKitPosts.Integration.PermissionsTest do
     end
   end
 
+  describe "groups" do
+    defp group!(user, attrs) do
+      {:ok, group} =
+        PhoenixKitPosts.create_group(
+          user.uuid,
+          Map.merge(%{name: "Board #{System.unique_integer([:positive])}"}, attrs)
+        )
+
+      group
+    end
+
+    defp loaded(scope) do
+      {:noreply, socket} = Web.Posts.handle_params(%{}, "/admin/posts", list_socket(scope))
+      socket
+    end
+
+    test "another user's private board is hidden without posts.view_all", ctx do
+      private = group!(ctx.author, %{is_public: false})
+      public = group!(ctx.author, %{is_public: true})
+      mine = group!(ctx.other, %{is_public: false})
+
+      socket = loaded(scope_for(ctx.other, ["posts"]))
+      names = Enum.map(socket.assigns.groups, & &1.name)
+
+      assert mine.name in names
+      assert public.name in names
+      refute private.name in names
+      # Posts go only into the viewer's own boards.
+      assert Enum.map(socket.assigns.target_groups, & &1.uuid) == [mine.uuid]
+
+      all = loaded(scope_for(ctx.other, ["posts", "posts.view_all"])).assigns.groups
+      assert private.uuid in Enum.map(all, & &1.uuid)
+    end
+
+    test "adding posts to someone else's board needs posts.manage_all", ctx do
+      theirs = group!(ctx.author, %{is_public: true})
+      post = post_fixture(ctx.other)
+
+      socket =
+        ctx.other
+        |> scope_for(["posts"])
+        |> list_socket()
+        |> Phoenix.Component.assign(:bulk_uuids, [post.uuid])
+
+      {:noreply, s} =
+        Web.Posts.handle_event("bulk_add_to_group", %{"group_uuid" => theirs.uuid}, socket)
+
+      assert error_flash(s) =~ "permission"
+      assert PhoenixKitPosts.list_posts_by_group(theirs.uuid) == []
+
+      manager =
+        ctx.other
+        |> scope_for(["posts", "posts.manage_all"])
+        |> list_socket()
+        |> Phoenix.Component.assign(:bulk_uuids, [post.uuid])
+
+      {:noreply, _} =
+        Web.Posts.handle_event("bulk_add_to_group", %{"group_uuid" => theirs.uuid}, manager)
+
+      assert [_] = PhoenixKitPosts.list_posts_by_group(theirs.uuid)
+    end
+  end
+
   describe "Web.Details" do
     test "another user's draft is refused at handle_params without posts.view_all", ctx do
       draft = post_fixture(ctx.author)
@@ -288,6 +351,21 @@ defmodule PhoenixKitPosts.Integration.PermissionsTest do
 
       {:noreply, s} = Web.Settings.handle_event("reset_defaults", %{}, plain)
       assert error_flash(s) =~ "permission"
+    end
+
+    test "a crafted non-scalar value is ignored, not a crash", ctx do
+      {:ok, socket} =
+        Web.Settings.mount(%{}, %{}, socket(scope_for(ctx.other, ["posts", "posts.settings"])))
+
+      {:noreply, _} =
+        Web.Settings.handle_event(
+          "save",
+          %{"settings" => %{"posts_per_page" => "31", "posts_max_tags" => %{"x" => "1"}}},
+          socket
+        )
+
+      assert Settings.get_setting("posts_per_page") == "31"
+      refute Settings.get_setting("posts_max_tags") == "%{\"x\" => \"1\"}"
     end
 
     test "a posts.settings holder saves only the page's own keys", ctx do

@@ -67,6 +67,25 @@ defmodule PhoenixKitPosts.Access do
     if view_all?(scope), do: [], else: [visible_to: Scope.user_uuid(scope)]
   end
 
+  @doc """
+  The `list_groups/1` option for the groups the scope may see: every group
+  with `posts.view_all`, otherwise its own groups and public ones.
+  """
+  def group_list_opts(scope) do
+    if view_all?(scope), do: [], else: [visible_to: Scope.user_uuid(scope)]
+  end
+
+  @doc """
+  True when the scope may add posts to `group`: its own group, or any group
+  with `posts.manage_all`.
+  """
+  def can_add_to_group?(scope, group) do
+    own_post?(scope, group) or Scope.can?(scope, @manage_all)
+  end
+
+  @doc "The groups the scope may add posts to, out of `groups`."
+  def target_groups(scope, groups), do: Enum.filter(groups, &can_add_to_group?(scope, &1))
+
   defp own_post?(scope, post) do
     case Scope.user_uuid(scope) do
       nil -> false

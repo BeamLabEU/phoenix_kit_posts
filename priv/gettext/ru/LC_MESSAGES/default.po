@@ -102,7 +102,7 @@ msgstr "Разрешить делиться постами других поль
 msgid "Enable user-specific post collections (Pinterest-style)"
 msgstr "Разрешить пользовательские коллекции постов (в стиле Pinterest)"
 
-#: lib/phoenix_kit_posts/web/settings.ex:136
+#: lib/phoenix_kit_posts/web/settings.ex:145
 #, elixir-autogen, elixir-format
 msgid "Failed to save some settings"
 msgstr "Не удалось сохранить некоторые настройки"
@@ -222,12 +222,12 @@ msgstr "Сохранить настройки"
 msgid "Saving..."
 msgstr "Сохранение..."
 
-#: lib/phoenix_kit_posts/web/settings.ex:149
+#: lib/phoenix_kit_posts/web/settings.ex:158
 #, elixir-autogen, elixir-format
 msgid "Settings reset to defaults"
 msgstr "Настройки сброшены к значениям по умолчанию"
 
-#: lib/phoenix_kit_posts/web/settings.ex:133
+#: lib/phoenix_kit_posts/web/settings.ex:142
 #, elixir-autogen, elixir-format
 msgid "Settings saved successfully"
 msgstr "Настройки успешно сохранены"
@@ -333,7 +333,7 @@ msgstr "Настройки"
 
 #: lib/phoenix_kit_posts/web/details.ex:214
 #: lib/phoenix_kit_posts/web/edit.html.heex:276
-#: lib/phoenix_kit_posts/web/posts.ex:319
+#: lib/phoenix_kit_posts/web/posts.ex:332
 #, elixir-autogen, elixir-format
 msgid "Another user"
 msgstr "Другой пользователь"
@@ -345,7 +345,7 @@ msgid "You don't have permission to change the Posts settings"
 msgstr "У вас нет прав на изменение настроек модуля постов"
 
 #: lib/phoenix_kit_posts/web/details.ex:176
-#: lib/phoenix_kit_posts/web/posts.ex:306
+#: lib/phoenix_kit_posts/web/posts.ex:319
 #, elixir-autogen, elixir-format
 msgid "You don't have permission to change this post"
 msgstr "У вас нет прав на изменение этого поста"
@@ -354,3 +354,8 @@ msgstr "У вас нет прав на изменение этого поста"
 #, elixir-autogen, elixir-format
 msgid "You don't have permission to see this post"
 msgstr "У вас нет прав на просмотр этого поста"
+
+#: lib/phoenix_kit_posts/web/posts.ex:281
+#, elixir-autogen, elixir-format
+msgid "You don't have permission to add posts to this group"
+msgstr "У вас нет прав на добавление постов в эту группу"

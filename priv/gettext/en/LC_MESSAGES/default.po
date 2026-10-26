@@ -102,7 +102,7 @@ msgstr ""
 msgid "Enable user-specific post collections (Pinterest-style)"
 msgstr ""
 
-#: lib/phoenix_kit_posts/web/settings.ex:136
+#: lib/phoenix_kit_posts/web/settings.ex:145
 #, elixir-autogen, elixir-format
 msgid "Failed to save some settings"
 msgstr ""
@@ -222,12 +222,12 @@ msgstr ""
 msgid "Saving..."
 msgstr ""
 
-#: lib/phoenix_kit_posts/web/settings.ex:149
+#: lib/phoenix_kit_posts/web/settings.ex:158
 #, elixir-autogen, elixir-format
 msgid "Settings reset to defaults"
 msgstr ""
 
-#: lib/phoenix_kit_posts/web/settings.ex:133
+#: lib/phoenix_kit_posts/web/settings.ex:142
 #, elixir-autogen, elixir-format
 msgid "Settings saved successfully"
 msgstr ""
@@ -333,7 +333,7 @@ msgstr ""
 
 #: lib/phoenix_kit_posts/web/details.ex:214
 #: lib/phoenix_kit_posts/web/edit.html.heex:276
-#: lib/phoenix_kit_posts/web/posts.ex:319
+#: lib/phoenix_kit_posts/web/posts.ex:332
 #, elixir-autogen, elixir-format
 msgid "Another user"
 msgstr ""
@@ -345,7 +345,7 @@ msgid "You don't have permission to change the Posts settings"
 msgstr ""
 
 #: lib/phoenix_kit_posts/web/details.ex:176
-#: lib/phoenix_kit_posts/web/posts.ex:306
+#: lib/phoenix_kit_posts/web/posts.ex:319
 #, elixir-autogen, elixir-format
 msgid "You don't have permission to change this post"
 msgstr ""
@@ -353,4 +353,9 @@ msgstr ""
 #: lib/phoenix_kit_posts/web/details.ex:82
 #, elixir-autogen, elixir-format
 msgid "You don't have permission to see this post"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/posts.ex:281
+#, elixir-autogen, elixir-format
+msgid "You don't have permission to add posts to this group"
 msgstr ""

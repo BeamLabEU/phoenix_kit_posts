@@ -234,12 +234,18 @@ Repo-local aliases:
   `public`/`unlisted`) needs `posts.view_all` (or `manage_all`); an author's
   email shows only to the author or a `posts.view_all` holder; the admin
   list filters with `Access.list_opts/1` (`list_posts/1`'s `:visible_to`).
+  Groups (boards) follow the same split: without `posts.view_all` the list
+  page shows only the viewer's own boards and public ones
+  (`Access.group_list_opts/1`, `list_groups/1`'s `:visible_to`), and posts go
+  only into the viewer's own boards unless they hold `posts.manage_all`
+  (`Access.can_add_to_group?/2`, checked in `bulk_add_to_group`).
   Every write `handle_event` re-checks — hidden buttons are not the guard —
   and checks use `Scope.can?/2`, never role names or raw key membership.
 - `Web.Settings` needs `posts.settings` at mount and on `save` /
   `reset_defaults`, and `save` writes only the `posts_*` keys in its
-  `@defaults` map: the params are client-supplied, so writing every key in
-  them would let the page set any site setting.
+  `@defaults` map, and only scalar values: the params are client-supplied,
+  so writing every key in them would let the page set any site setting, and
+  a crafted map value would crash the event.
 - Comments seam: `Web.Details` renders
   `PhoenixKitComments.Web.CommentsComponent` with `resource_type="post"` and
   keeps `use PhoenixKitComments.Embed`, which forwards the composer's
