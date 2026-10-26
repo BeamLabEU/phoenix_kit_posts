@@ -156,6 +156,13 @@ defmodule PhoenixKitPosts do
   def migration_module, do: PhoenixKitPosts.Migrations
 
   @doc """
+  The manifest of this module's tables, for `mix phoenix_kit.repair` and
+  `mix phoenix_kit.doctor`; see `PhoenixKitPosts.ExpectedSchema`.
+  """
+  # No `@impl`, so this compiles against a core that lacks the callback.
+  def expected_schema, do: PhoenixKitPosts.ExpectedSchema
+
+  @doc """
   The places in this module's tables that point at a stored file; see
   `PhoenixKitPosts.FileReferences`.
   """
