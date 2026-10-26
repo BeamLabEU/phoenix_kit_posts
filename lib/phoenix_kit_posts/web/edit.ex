@@ -29,9 +29,9 @@ defmodule PhoenixKitPosts.Web.Edit do
   import Leaf, only: [leaf_editor: 1]
   alias PhoenixKit.Modules.Storage.URLSigner
   alias PhoenixKit.Settings
-  alias PhoenixKit.Users.Roles
   alias PhoenixKit.Utils.Routes
   alias PhoenixKit.Utils.Slug
+  alias PhoenixKitPosts.Access
   alias PhoenixKitPosts.Post
   alias PhoenixKitPosts.Web.ScheduleInput
 
@@ -77,7 +77,9 @@ defmodule PhoenixKitPosts.Web.Edit do
          |> push_navigate(to: Routes.path("/admin/posts"))}
 
       post ->
-        if can_edit_post?(current_user, post) do
+        # The author, or a `posts.manage_all` holder — the same rule every
+        # other page applies (PhoenixKitPosts.Access).
+        if Access.can_manage_post?(socket.assigns[:phoenix_kit_current_scope], post) do
           form_data = %{
             "title" => post.title || "",
             "sub_title" => post.sub_title || "",
@@ -569,16 +571,6 @@ defmodule PhoenixKitPosts.Web.Edit do
       end
 
     assign(socket, :post_images, post_images)
-  end
-
-  defp can_edit_post?(user, post) do
-    # User can edit if they own the post or are admin/owner
-    Map.get(post, :user_uuid) == user.uuid or user_is_admin?(user)
-  end
-
-  defp user_is_admin?(user) do
-    # Check if user has admin or owner role
-    Roles.user_has_role_owner?(user) or Roles.user_has_role_admin?(user)
   end
 
   defp maybe_generate_slug(post_params) do

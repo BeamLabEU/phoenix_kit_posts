@@ -44,6 +44,7 @@ defmodule PhoenixKitPosts.Web.Posts do
 
   alias PhoenixKit.Settings
   alias PhoenixKit.Utils.Routes
+  alias PhoenixKitPosts.Access
   alias PhoenixKitWeb.Actor
 
   @max_per_page 100
@@ -144,11 +145,11 @@ defmodule PhoenixKitPosts.Web.Posts do
 
   @impl true
   def handle_event("delete_post", %{"id" => post_uuid}, socket) do
-    case PhoenixKitPosts.get_post(post_uuid) do
-      nil ->
-        {:noreply, socket |> put_flash(:error, "Post not found")}
+    case fetch_manageable_post(socket, post_uuid) do
+      {:error, message} ->
+        {:noreply, socket |> put_flash(:error, message)}
 
-      post ->
+      {:ok, post} ->
         case PhoenixKitPosts.delete_post(post, Actor.opts(socket)) do
           {:ok, _} ->
             {:noreply,
@@ -165,11 +166,11 @@ defmodule PhoenixKitPosts.Web.Posts do
 
   @impl true
   def handle_event("publish_post", %{"id" => post_uuid}, socket) do
-    case PhoenixKitPosts.get_post(post_uuid) do
-      nil ->
-        {:noreply, socket |> put_flash(:error, "Post not found")}
+    case fetch_manageable_post(socket, post_uuid) do
+      {:error, message} ->
+        {:noreply, socket |> put_flash(:error, message)}
 
-      post ->
+      {:ok, post} ->
         case PhoenixKitPosts.publish_post(post, Actor.opts(socket)) do
           {:ok, _} ->
             {:noreply,
@@ -186,11 +187,11 @@ defmodule PhoenixKitPosts.Web.Posts do
 
   @impl true
   def handle_event("draft_post", %{"id" => post_uuid}, socket) do
-    case PhoenixKitPosts.get_post(post_uuid) do
-      nil ->
-        {:noreply, socket |> put_flash(:error, "Post not found")}
+    case fetch_manageable_post(socket, post_uuid) do
+      {:error, message} ->
+        {:noreply, socket |> put_flash(:error, message)}
 
-      post ->
+      {:ok, post} ->
         case PhoenixKitPosts.draft_post(post) do
           {:ok, _} ->
             {:noreply,
@@ -215,12 +216,12 @@ defmodule PhoenixKitPosts.Web.Posts do
     actor_opts = Actor.opts(socket)
 
     count =
-      Enum.reduce(uuids, 0, fn post_uuid, acc ->
-        case PhoenixKitPosts.get_post(post_uuid) do
-          nil ->
+      Enum.reduce(List.wrap(uuids), 0, fn post_uuid, acc ->
+        case fetch_manageable_post(socket, post_uuid) do
+          {:error, _} ->
             acc
 
-          post ->
+          {:ok, post} ->
             case PhoenixKitPosts.publish_post(post, actor_opts) do
               {:ok, _} -> acc + 1
               _ -> acc
@@ -240,12 +241,12 @@ defmodule PhoenixKitPosts.Web.Posts do
     actor_opts = Actor.opts(socket)
 
     count =
-      Enum.reduce(uuids, 0, fn post_uuid, acc ->
-        case PhoenixKitPosts.get_post(post_uuid) do
-          nil ->
+      Enum.reduce(List.wrap(uuids), 0, fn post_uuid, acc ->
+        case fetch_manageable_post(socket, post_uuid) do
+          {:error, _} ->
             acc
 
-          post ->
+          {:ok, post} ->
             case PhoenixKitPosts.delete_post(post, actor_opts) do
               {:ok, _} -> acc + 1
               _ -> acc
@@ -262,7 +263,14 @@ defmodule PhoenixKitPosts.Web.Posts do
 
   @impl true
   def handle_event("bulk_add_to_group", %{"group_uuid" => group_uuid}, socket) do
-    case PhoenixKitPosts.add_posts_to_group(socket.assigns.bulk_uuids, group_uuid) do
+    # Only posts this user may change go into the group; the selection is
+    # client-supplied, so it is filtered here rather than trusted.
+    post_uuids =
+      socket.assigns.bulk_uuids
+      |> List.wrap()
+      |> Enum.filter(&match?({:ok, _}, fetch_manageable_post(socket, &1)))
+
+    case PhoenixKitPosts.add_posts_to_group(post_uuids, group_uuid) do
       {:ok, count} ->
         {:noreply,
          socket
@@ -285,6 +293,32 @@ defmodule PhoenixKitPosts.Web.Posts do
   end
 
   ## --- Private Helper Functions ---
+
+  # The post behind `post_uuid`, when this user may change it: their own
+  # post, or anyone's with `posts.manage_all` (see PhoenixKitPosts.Access).
+  defp fetch_manageable_post(socket, post_uuid) do
+    scope = socket.assigns[:phoenix_kit_current_scope]
+
+    case is_binary(post_uuid) && PhoenixKitPosts.get_post(post_uuid) do
+      post when is_struct(post) ->
+        if Access.can_manage_post?(scope, post),
+          do: {:ok, post},
+          else: {:error, gettext("You don't have permission to change this post")}
+
+      _ ->
+        {:error, "Post not found"}
+    end
+  end
+
+  # Who wrote a row, as this viewer may see it: the email for their own post
+  # or with `posts.view_all`, else the author's username.
+  defp author_label(scope, post) do
+    cond do
+      is_nil(post.user) -> "Unknown"
+      Access.can_see_author_email?(scope, post) -> post.user.email
+      true -> Map.get(post.user, :username) || gettext("Another user")
+    end
+  end
 
   defp posts_enabled? do
     Settings.get_setting_cached("posts_enabled", "true") == "true"
@@ -339,6 +373,9 @@ defmodule PhoenixKitPosts.Web.Posts do
       opts
       |> Keyword.drop([:page, :per_page, :preload])
 
+    # Others' drafts and unpublished posts only with `posts.view_all`.
+    opts = opts ++ Access.list_opts(socket.assigns[:phoenix_kit_current_scope])
+
     posts = PhoenixKitPosts.list_posts(opts)
     total_count = PhoenixKitPosts.count_posts(count_opts)
 
@@ -349,12 +386,14 @@ defmodule PhoenixKitPosts.Web.Posts do
   end
 
   defp load_stats(socket) do
+    visible = Access.list_opts(socket.assigns[:phoenix_kit_current_scope])
+
     stats = %{
-      total: PhoenixKitPosts.count_posts([]),
-      drafts: PhoenixKitPosts.count_posts(status: "draft"),
-      public: PhoenixKitPosts.count_posts(status: "public"),
-      scheduled: PhoenixKitPosts.count_posts(status: "scheduled"),
-      unlisted: PhoenixKitPosts.count_posts(status: "unlisted")
+      total: PhoenixKitPosts.count_posts(visible),
+      drafts: PhoenixKitPosts.count_posts([status: "draft"] ++ visible),
+      public: PhoenixKitPosts.count_posts([status: "public"] ++ visible),
+      scheduled: PhoenixKitPosts.count_posts([status: "scheduled"] ++ visible),
+      unlisted: PhoenixKitPosts.count_posts([status: "unlisted"] ++ visible)
     }
 
     assign(socket, :stats, stats)

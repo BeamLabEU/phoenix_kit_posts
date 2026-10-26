@@ -170,8 +170,58 @@ defmodule PhoenixKitPosts do
       key: "posts",
       label: "Posts",
       icon: "hero-document-text",
-      description: "Social posts, boards, likes, and comments"
+      description: "Social posts, boards, likes, and comments",
+      # The base key used to let its holder delete, publish and unpublish
+      # anyone's post, see every draft with its author's email, and change
+      # the module's settings. Those rights are split out here; Admin gets
+      # them from core's boot-time auto-grant, Owner through "*", and
+      # `migrate_legacy/0` carries every other role that already held
+      # `posts`, so nobody loses access.
+      sub_permissions: [
+        %{
+          key: "manage_all",
+          label: "Manage everyone's posts",
+          description: "Edit, delete, publish and unpublish posts written by other users"
+        },
+        %{
+          key: "view_all",
+          label: "See everyone's posts",
+          description:
+            "See other users' drafts and unpublished posts, and the email address of every post's author"
+        },
+        %{
+          key: "settings",
+          label: "Change the module's settings",
+          description: "Open and save the Posts settings page"
+        }
+      ]
     }
+  end
+
+  # One flag per sub-key, so a later split gets its own pass.
+  @sub_key_backfills [
+    {"posts.manage_all", "posts_manage_all_backfilled"},
+    {"posts.view_all", "posts_view_all_backfilled"},
+    {"posts.settings", "posts_settings_backfilled"}
+  ]
+
+  @doc """
+  One-time data repairs, run by core at every boot.
+
+  Grants each sub-permission split out of the base `posts` key
+  (`posts.manage_all`, `posts.view_all`, `posts.settings`) once to every role
+  that already holds `posts`, so the split takes nothing away. Each pass has
+  its own flag and is retried on the next boot when it did not finish; see
+  `PhoenixKitPosts.PermissionBackfill`.
+  """
+  @impl PhoenixKit.Module
+  def migrate_legacy do
+    results =
+      Enum.map(@sub_key_backfills, fn {key, flag} ->
+        PhoenixKitPosts.PermissionBackfill.run(module_key(), key, flag)
+      end)
+
+    Enum.find(results, :ok, &(&1 != :ok))
   end
 
   @impl PhoenixKit.Module
@@ -279,7 +329,7 @@ defmodule PhoenixKitPosts do
         priority: 922,
         level: :admin,
         parent: :admin_settings,
-        permission: "posts",
+        permission: "posts.settings",
         live_view: {PhoenixKitPosts.Web.Settings, :index}
       )
     ]
@@ -498,6 +548,9 @@ defmodule PhoenixKitPosts do
 
   - `opts` - Options
     - `:user_uuid` - Filter by user
+    - `:visible_to` - A user uuid: keep only that user's own posts and
+      published (`public`/`unlisted`) posts of others. The admin list passes
+      it for a viewer without `posts.view_all` (see `PhoenixKitPosts.Access`)
     - `:status` - Filter by status (draft/public/unlisted/scheduled)
     - `:type` - Filter by type (post/snippet/repost)
     - `:search` - Search in title and content
@@ -527,6 +580,7 @@ defmodule PhoenixKitPosts do
 
     Post
     |> maybe_filter_by_user(user_uuid)
+    |> maybe_filter_visible_to(Keyword.get(opts, :visible_to, :all))
     |> maybe_filter_by_status(status)
     |> maybe_filter_by_type(type)
     |> maybe_search(search)
@@ -539,7 +593,8 @@ defmodule PhoenixKitPosts do
   @doc """
   Counts posts matching the given filter options.
 
-  Accepts the same filter options as `list_posts/1` (`:user_uuid`, `:status`, `:type`, `:search`)
+  Accepts the same filter options as `list_posts/1` (`:user_uuid`, `:visible_to`, `:status`,
+  `:type`, `:search`)
   but ignores pagination options.
   """
   def count_posts(opts \\ []) do
@@ -550,6 +605,7 @@ defmodule PhoenixKitPosts do
 
     Post
     |> maybe_filter_by_user(user_uuid)
+    |> maybe_filter_visible_to(Keyword.get(opts, :visible_to, :all))
     |> maybe_filter_by_status(status)
     |> maybe_filter_by_type(type)
     |> maybe_search(search)
@@ -1651,6 +1707,20 @@ defmodule PhoenixKitPosts do
 
   defp maybe_filter_by_user(query, user_uuid) when is_binary(user_uuid) do
     where(query, [p], p.user_uuid == ^user_uuid)
+  end
+
+  # `:all` (the option absent) leaves the query alone. A nil uuid (no
+  # signed-in user) keeps only published posts, never everything.
+  defp maybe_filter_visible_to(query, :all), do: query
+
+  defp maybe_filter_visible_to(query, nil) do
+    published = PhoenixKitPosts.Access.published_statuses()
+    where(query, [p], p.status in ^published)
+  end
+
+  defp maybe_filter_visible_to(query, user_uuid) when is_binary(user_uuid) do
+    published = PhoenixKitPosts.Access.published_statuses()
+    where(query, [p], p.user_uuid == ^user_uuid or p.status in ^published)
   end
 
   defp maybe_filter_by_status(query, nil), do: query

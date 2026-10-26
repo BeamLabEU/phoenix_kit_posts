@@ -51,7 +51,7 @@ msgstr "Автоматически создавать из заголовков 
 msgid "Configuration"
 msgstr "Конфигурация"
 
-#: lib/phoenix_kit_posts/web/settings.ex:47
+#: lib/phoenix_kit_posts/web/settings.ex:89
 #: lib/phoenix_kit_posts/web/settings.html.heex:5
 #, elixir-autogen, elixir-format
 msgid "Configure posts module behavior, limits, and features"
@@ -102,7 +102,7 @@ msgstr "Разрешить делиться постами других поль
 msgid "Enable user-specific post collections (Pinterest-style)"
 msgstr "Разрешить пользовательские коллекции постов (в стиле Pinterest)"
 
-#: lib/phoenix_kit_posts/web/settings.ex:80
+#: lib/phoenix_kit_posts/web/settings.ex:136
 #, elixir-autogen, elixir-format
 msgid "Failed to save some settings"
 msgstr "Не удалось сохранить некоторые настройки"
@@ -222,12 +222,12 @@ msgstr "Сохранить настройки"
 msgid "Saving..."
 msgstr "Сохранение..."
 
-#: lib/phoenix_kit_posts/web/settings.ex:117
+#: lib/phoenix_kit_posts/web/settings.ex:149
 #, elixir-autogen, elixir-format
 msgid "Settings reset to defaults"
 msgstr "Настройки сброшены к значениям по умолчанию"
 
-#: lib/phoenix_kit_posts/web/settings.ex:77
+#: lib/phoenix_kit_posts/web/settings.ex:133
 #, elixir-autogen, elixir-format
 msgid "Settings saved successfully"
 msgstr "Настройки успешно сохранены"
@@ -242,42 +242,42 @@ msgstr "Показывать число просмотров"
 msgid "Unlisted"
 msgstr "Скрытый"
 
+#: lib/phoenix_kit_posts/web/posts.html.heex:319
 #: lib/phoenix_kit_posts/web/posts.html.heex:322
-#: lib/phoenix_kit_posts/web/posts.html.heex:325
 #, elixir-autogen, elixir-format
 msgid "Delete post"
 msgstr ""
 
+#: lib/phoenix_kit_posts/web/posts.html.heex:284
 #: lib/phoenix_kit_posts/web/posts.html.heex:287
-#: lib/phoenix_kit_posts/web/posts.html.heex:290
 #, elixir-autogen, elixir-format
 msgid "Edit post"
 msgstr ""
 
-#: lib/phoenix_kit_posts/web/posts.html.heex:309
-#: lib/phoenix_kit_posts/web/posts.html.heex:313
+#: lib/phoenix_kit_posts/web/posts.html.heex:306
+#: lib/phoenix_kit_posts/web/posts.html.heex:310
 #, elixir-autogen, elixir-format
 msgid "Move to draft"
 msgstr ""
 
-#: lib/phoenix_kit_posts/web/posts.html.heex:297
-#: lib/phoenix_kit_posts/web/posts.html.heex:301
+#: lib/phoenix_kit_posts/web/posts.html.heex:294
+#: lib/phoenix_kit_posts/web/posts.html.heex:298
 #, elixir-autogen, elixir-format
 msgid "Publish post"
 msgstr ""
 
-#: lib/phoenix_kit_posts/web/edit.ex:460
+#: lib/phoenix_kit_posts/web/edit.ex:462
 #, elixir-autogen, elixir-format
 msgid "Something went wrong. Please try again."
 msgstr ""
 
-#: lib/phoenix_kit_posts/web/posts.html.heex:278
-#: lib/phoenix_kit_posts/web/posts.html.heex:281
+#: lib/phoenix_kit_posts/web/posts.html.heex:274
+#: lib/phoenix_kit_posts/web/posts.html.heex:277
 #, elixir-autogen, elixir-format
 msgid "View post"
 msgstr ""
 
-#: lib/phoenix_kit_posts/web/edit.ex:92
+#: lib/phoenix_kit_posts/web/edit.ex:94
 #: lib/phoenix_kit_posts/web/group_edit.ex:123
 #, elixir-autogen, elixir-format
 msgid "Edit"
@@ -305,7 +305,7 @@ msgstr "Группы"
 msgid "New group"
 msgstr "Новая группа"
 
-#: lib/phoenix_kit_posts/web/edit.ex:122
+#: lib/phoenix_kit_posts/web/edit.ex:124
 #, elixir-autogen, elixir-format
 msgid "New post"
 msgstr "Новый пост"
@@ -320,13 +320,37 @@ msgstr "Пост"
 #: lib/phoenix_kit_posts/web/edit.ex:56
 #: lib/phoenix_kit_posts/web/group_edit.ex:46
 #: lib/phoenix_kit_posts/web/groups.ex:43
-#: lib/phoenix_kit_posts/web/posts.ex:66
-#: lib/phoenix_kit_posts/web/settings.ex:43
+#: lib/phoenix_kit_posts/web/posts.ex:67
+#: lib/phoenix_kit_posts/web/settings.ex:85
 #, elixir-autogen, elixir-format
 msgid "Posts"
 msgstr "Посты"
 
-#: lib/phoenix_kit_posts/web/settings.ex:44
+#: lib/phoenix_kit_posts/web/settings.ex:86
 #, elixir-autogen, elixir-format
 msgid "Settings"
 msgstr "Настройки"
+
+#: lib/phoenix_kit_posts/web/details.ex:214
+#: lib/phoenix_kit_posts/web/edit.html.heex:276
+#: lib/phoenix_kit_posts/web/posts.ex:319
+#, elixir-autogen, elixir-format
+msgid "Another user"
+msgstr "Другой пользователь"
+
+#: lib/phoenix_kit_posts/web/settings.ex:78
+#: lib/phoenix_kit_posts/web/settings.ex:106
+#, elixir-autogen, elixir-format
+msgid "You don't have permission to change the Posts settings"
+msgstr "У вас нет прав на изменение настроек модуля постов"
+
+#: lib/phoenix_kit_posts/web/details.ex:176
+#: lib/phoenix_kit_posts/web/posts.ex:306
+#, elixir-autogen, elixir-format
+msgid "You don't have permission to change this post"
+msgstr "У вас нет прав на изменение этого поста"
+
+#: lib/phoenix_kit_posts/web/details.ex:82
+#, elixir-autogen, elixir-format
+msgid "You don't have permission to see this post"
+msgstr "У вас нет прав на просмотр этого поста"

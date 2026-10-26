@@ -2,7 +2,7 @@
     <%!-- Header Section --%>
     <.admin_page_header back={Routes.path("/admin/posts")}>
       <:actions>
-        <%= if can_edit_post?(@current_user, @post) do %>
+        <%= if Access.can_manage_post?(@phoenix_kit_current_scope, @post) do %>
           <.link
             href={Routes.path("/admin/posts/#{@post.uuid}/edit")}
             class="btn btn-outline btn-sm"
@@ -80,11 +80,7 @@
                 <div class="flex items-center gap-2">
                   <.icon name="hero-user-circle" class="w-5 h-5" />
                   <span>
-                    <%= if @post.user do %>
-                      {@post.user.email}
-                    <% else %>
-                      Unknown
-                    <% end %>
+                    {author_label(@phoenix_kit_current_scope, @post)}
                   </span>
                 </div>
                 <div class="flex items-center gap-2">
