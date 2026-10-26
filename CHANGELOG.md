@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- **The module now tells core's orphan-file check which of its rows point at a stored file** (`file_references/0`, in `FileReferences`): `phoenix_kit_post_media`, `phoenix_kit_post_groups`, `phoenix_kit_posts`. The SQL moved here verbatim from core's `PhoenixKit.Modules.Storage`; a test compares it with core's own copy. Core reads the callback from the first release after 2.64.1; before that, core's own list stays in force. No migration, no change in what counts as an orphan.
+
 ## 0.6.0 - 2026-10-24
 
 ### Changed
