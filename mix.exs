@@ -92,7 +92,9 @@ defmodule PhoenixKitPosts.MixProject do
       # there and no longer feature-detected, so a lower core fails to compile.
       # Patch-precise floor in the compound form, so the ceiling stays open
       # through every later 2.x minor (see test/core_pin_conformance_test.exs).
-      pk_dep(:phoenix_kit, ">= 2.38.0 and < 3.0.0"),
+      # Floor 2.65.0: the first core with the `file_references/0` and `expected_schema/0`
+      # callbacks this module implements (`@impl`). The ceiling is open through core 3.x.
+      pk_dep(:phoenix_kit, ">= 2.65.0 and < 4.0.0"),
       # Comments module for post detail page comments section. 0.2.6 is the
       # floor: `Web.Details` does `use PhoenixKitComments.Embed`, which that
       # release first published. The `use` is unguarded, so 0.2.0–0.2.5 fails
