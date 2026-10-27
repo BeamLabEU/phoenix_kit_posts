@@ -267,10 +267,13 @@
                     <.icon name="hero-user-circle" class="w-4 h-4 text-base-content/50" />
                     <span class="text-base-content/70">Created by:</span>
                     <span class="font-medium">
-                      <%= if @post.user do %>
-                        {@post.user.email}
-                      <% else %>
-                        Unknown
+                      <%= cond do %>
+                        <% is_nil(@post.user) -> %>
+                          Unknown
+                        <% Access.can_see_author_email?(@phoenix_kit_current_scope, @post) -> %>
+                          {@post.user.email}
+                        <% true -> %>
+                          {Map.get(@post.user, :username) || gettext("Another user")}
                       <% end %>
                     </span>
                   </div>

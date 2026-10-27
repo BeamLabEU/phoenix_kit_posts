@@ -36,7 +36,8 @@ standalone Phoenix app.
   (`/admin/posts/groups`); hidden CRUD tabs `/admin/posts/new`,
   `/admin/posts/:id`, `/admin/posts/:id/edit`, `/admin/posts/groups/new`,
   `/admin/posts/groups/:id/edit`; settings tab `:admin_settings_posts` at
-  `/admin/settings/posts`. Every tab carries `permission: "posts"`.
+  `/admin/settings/posts`. Every tab carries `permission: "posts"` except
+  the settings tab, which carries `"posts.settings"`.
 - **Module key** `"posts"`; settings prefix `posts_`.
 
 ## What this module does NOT do
@@ -226,9 +227,25 @@ Repo-local aliases:
   `web/edit.html.heex`, whose `data-editor-id` names the Leaf editor — writes
   each item into the editor's visual surface, or its markdown textarea as the
   fallback. File URLs come from core's `Storage.URLSigner`.
-- Authorization in the LiveViews: editing and deleting a post require the
-  current user to own it or to hold the admin/owner role
-  (`PhoenixKit.Users.Roles`). Tab access is the `"posts"` permission.
+- Authorization in the LiveViews goes through `PhoenixKitPosts.Access`, one
+  rule for every page: acting on a post (edit, delete, publish, unpublish,
+  change status, add to a group, single or bulk) needs authorship or
+  `posts.manage_all`; seeing another user's unpublished post (anything but
+  `public`/`unlisted`) needs `posts.view_all` (or `manage_all`); an author's
+  email shows only to the author or a `posts.view_all` holder; the admin
+  list filters with `Access.list_opts/1` (`list_posts/1`'s `:visible_to`).
+  Groups (boards) follow the same split: without `posts.view_all` the list
+  page shows only the viewer's own boards and public ones
+  (`Access.group_list_opts/1`, `list_groups/1`'s `:visible_to`), and posts go
+  only into the viewer's own boards unless they hold `posts.manage_all`
+  (`Access.can_add_to_group?/2`, checked in `bulk_add_to_group`).
+  Every write `handle_event` re-checks — hidden buttons are not the guard —
+  and checks use `Scope.can?/2`, never role names or raw key membership.
+- `Web.Settings` needs `posts.settings` at mount and on `save` /
+  `reset_defaults`, and `save` writes only the `posts_*` keys in its
+  `@defaults` map, and only scalar values: the params are client-supplied,
+  so writing every key in them would let the page set any site setting, and
+  a crafted map value would crash the event.
 - Comments seam: `Web.Details` renders
   `PhoenixKitComments.Web.CommentsComponent` with `resource_type="post"` and
   keeps `use PhoenixKitComments.Embed`, which forwards the composer's
@@ -297,6 +314,8 @@ Repo-local aliases:
 lib/
   phoenix_kit_posts.ex                    # PhoenixKit.Module callbacks + the whole context
   phoenix_kit_posts/
+    access.ex                             # PhoenixKitPosts.Access: who may see / act on a post, settings key
+    permission_backfill.ex                # one-time sub-key grant to roles holding "posts"
     gettext.ex                            # PhoenixKitPosts.Gettext backend (priv/gettext)
     migrations.ex                         # PhoenixKitPosts.Migrations: module-owned chain, V1 adopts core's 13 tables
     schemas/
@@ -360,9 +379,24 @@ LiveViews directly.
 
 ### Permissions
 
-One permission key, `"posts"` (`permission_metadata/0`; icon
-`hero-document-text`). No sub-permissions. Ownership vs admin/owner role is
-checked in the LiveViews, not by core.
+Base key `"posts"` (`permission_metadata/0`; icon `hero-document-text`)
+reaches the module: write and manage your own posts, see published ones.
+Sub-permissions, enforced in the module by `PhoenixKitPosts.Access`:
+
+| Key | Allows |
+|-----|--------|
+| `posts.manage_all` | Edit, delete, publish and unpublish other users' posts |
+| `posts.view_all` | See other users' drafts/unpublished posts and every author's email |
+| `posts.settings` | Open and save the settings page |
+
+Admin gets them from core's boot auto-grant, Owner through `"*"`.
+`migrate_legacy/0` grants each once to every role that already held
+`"posts"` (`PhoenixKitPosts.PermissionBackfill`, one flag per key:
+`posts_manage_all_backfilled`, `posts_view_all_backfilled`,
+`posts_settings_backfilled`); a flag is set only when every grant
+succeeded, so a failed pass retries on the next boot, and a role granted
+`"posts"` later gets the narrow meaning. A new sub-key that narrows the base
+key needs its own entry in `@sub_key_backfills`.
 
 ### Settings keys
 

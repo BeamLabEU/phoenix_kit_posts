@@ -26,7 +26,9 @@ defmodule PhoenixKitPosts.Web.Settings do
 
   ## Permissions
 
-  Access is restricted to users with admin or owner roles in PhoenixKit.
+  Needs `posts.settings` (checked at mount and on every write event, besides
+  the tab's own `permission:`). Saving writes only the `posts_*` keys this
+  page shows; any other key in the submitted params is ignored.
   """
 
   use PhoenixKitWeb, :live_view
@@ -35,36 +37,99 @@ defmodule PhoenixKitPosts.Web.Settings do
 
   alias PhoenixKit.Settings
   alias PhoenixKit.Utils.Routes
+  alias PhoenixKitPosts.Access
+
+  # The keys this page owns. "save" writes these and nothing else: the form
+  # params are client-supplied, and writing every key in them let anyone on
+  # this page set ANY site setting.
+  @defaults %{
+    # Content Limits
+    "posts_max_media" => "10",
+    "posts_max_title_length" => "255",
+    "posts_max_subtitle_length" => "500",
+    "posts_max_content_length" => "50000",
+    "posts_max_mentions" => "10",
+    "posts_max_tags" => "20",
+    # Module Configuration
+    "posts_enabled" => "true",
+    "posts_per_page" => "20",
+    "posts_default_status" => "draft",
+    # Feature Toggles
+    "posts_likes_enabled" => "true",
+    "posts_allow_scheduling" => "true",
+    "posts_allow_groups" => "true",
+    "posts_allow_reposts" => "true",
+    "posts_seo_auto_slug" => "true",
+    "posts_show_view_count" => "true",
+    # Moderation
+    "posts_require_approval" => "false"
+  }
 
   def mount(_params, _session, socket) do
-    socket =
-      socket
-      # Trail: Admin Panel / Settings / Posts — the page lives in Settings.
-      |> assign(:page_title, gettext("Posts"))
-      |> assign(:page_section, gettext("Settings"))
-      |> assign(:page_section_path, Routes.path("/admin/settings"))
-      |> assign(:page_crumbs, [])
-      |> assign(:page_subtitle, gettext("Configure posts module behavior, limits, and features"))
-      |> assign(:project_title, Settings.get_project_title())
-      |> assign(:saving, false)
+    if Access.can_change_settings?(socket.assigns[:phoenix_kit_current_scope]) do
+      {:ok, assign_page(socket)}
+    else
+      {:ok, refuse(socket)}
+    end
+  end
 
-    {:ok, socket}
+  defp refuse(socket) do
+    socket
+    |> put_flash(:error, gettext("You don't have permission to change the Posts settings"))
+    |> push_navigate(to: Routes.path("/admin"))
+  end
+
+  defp assign_page(socket) do
+    socket
+    # Trail: Admin Panel / Settings / Posts — the page lives in Settings.
+    |> assign(:page_title, gettext("Posts"))
+    |> assign(:page_section, gettext("Settings"))
+    |> assign(:page_section_path, Routes.path("/admin/settings"))
+    |> assign(:page_crumbs, [])
+    |> assign(:page_subtitle, gettext("Configure posts module behavior, limits, and features"))
+    |> assign(:project_title, Settings.get_project_title())
+    |> assign(:saving, false)
   end
 
   def handle_params(_params, _uri, socket) do
     {:noreply, load_settings(socket)}
   end
 
-  def handle_event("save", params, socket) do
+  def handle_event(event, params, socket) when event in ["save", "reset_defaults"] do
+    if Access.can_change_settings?(socket.assigns[:phoenix_kit_current_scope]) do
+      handle_settings_event(event, params, socket)
+    else
+      {:noreply,
+       put_flash(
+         socket,
+         :error,
+         gettext("You don't have permission to change the Posts settings")
+       )}
+    end
+  end
+
+  defp handle_settings_event("save", params, socket) do
     socket = assign(socket, :saving, true)
 
-    # Extract settings from params
-    settings = Map.get(params, "settings", %{})
+    settings =
+      case Map.get(params, "settings") do
+        # Only this page's keys, and only scalar values: a crafted list or
+        # map would otherwise reach `to_string/1` and crash the event.
+        %{} = submitted ->
+          submitted
+          |> Map.take(Map.keys(@defaults))
+          |> Map.filter(fn {_key, value} ->
+            is_binary(value) or is_number(value) or is_boolean(value)
+          end)
+
+        _ ->
+          %{}
+      end
 
     # Update all settings
     results =
       Enum.map(settings, fn {key, value} ->
-        Settings.update_setting(key, value)
+        Settings.update_setting(key, to_string(value))
       end)
 
     # Check if all updates succeeded
@@ -83,33 +148,9 @@ defmodule PhoenixKitPosts.Web.Settings do
     {:noreply, assign(socket, :saving, false)}
   end
 
-  def handle_event("reset_defaults", _params, socket) do
-    # Reset all settings to defaults
-    defaults = %{
-      # Content Limits
-      "posts_max_media" => "10",
-      "posts_max_title_length" => "255",
-      "posts_max_subtitle_length" => "500",
-      "posts_max_content_length" => "50000",
-      "posts_max_mentions" => "10",
-      "posts_max_tags" => "20",
-      # Module Configuration
-      "posts_enabled" => "true",
-      "posts_per_page" => "20",
-      "posts_default_status" => "draft",
-      # Feature Toggles
-      "posts_likes_enabled" => "true",
-      "posts_allow_scheduling" => "true",
-      "posts_allow_groups" => "true",
-      "posts_allow_reposts" => "true",
-      "posts_seo_auto_slug" => "true",
-      "posts_show_view_count" => "true",
-      # Moderation
-      "posts_require_approval" => "false"
-    }
-
-    Enum.each(defaults, fn {key, value} ->
-      Settings.update_setting(key, value)
+  defp handle_settings_event("reset_defaults", _params, socket) do
+    Enum.each(@defaults, fn {key, value} ->
+      Settings.update_setting(key, to_string(value))
     end)
 
     {:noreply,

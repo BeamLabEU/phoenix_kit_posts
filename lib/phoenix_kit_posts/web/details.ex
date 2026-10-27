@@ -34,9 +34,9 @@ defmodule PhoenixKitPosts.Web.Details do
   require Logger
 
   alias PhoenixKit.Settings
-  alias PhoenixKit.Users.Roles
   alias PhoenixKit.Utils.HtmlSanitizer
   alias PhoenixKit.Utils.Routes
+  alias PhoenixKitPosts.Access
   alias PhoenixKitWeb.Actor
 
   @post_preloads [:user, [media: :file], :tags, :groups, :mentions]
@@ -65,14 +65,24 @@ defmodule PhoenixKitPosts.Web.Details do
 
   @impl true
   def handle_params(%{"id" => post_uuid}, _uri, socket) do
-    case PhoenixKitPosts.get_post(post_uuid, preload: @post_preloads) do
-      nil ->
+    post = PhoenixKitPosts.get_post(post_uuid, preload: @post_preloads)
+
+    cond do
+      is_nil(post) ->
         {:noreply,
          socket
          |> put_flash(:error, "Post not found")
          |> push_navigate(to: Routes.path("/admin/posts"))}
 
-      post ->
+      # Someone else's draft or unpublished post needs `posts.view_all`
+      # (or `posts.manage_all`), even when the uuid is typed in by hand.
+      not Access.can_view_post?(socket.assigns[:phoenix_kit_current_scope], post) ->
+        {:noreply,
+         socket
+         |> put_flash(:error, gettext("You don't have permission to see this post"))
+         |> push_navigate(to: Routes.path("/admin/posts"))}
+
+      true ->
         if connected?(socket), do: PhoenixKitPosts.increment_view_count(post)
 
         liked_by_user =
@@ -130,29 +140,15 @@ defmodule PhoenixKitPosts.Web.Details do
 
   @impl true
   def handle_event("delete_post", _params, socket) do
-    case PhoenixKitPosts.delete_post(socket.assigns.post, Actor.opts(socket)) do
-      {:ok, _} ->
-        {:noreply,
-         socket
-         |> put_flash(:info, "Post deleted successfully")
-         |> push_navigate(to: Routes.path("/admin/posts"))}
-
-      {:error, _} ->
-        {:noreply, socket |> put_flash(:error, "Failed to delete post")}
+    with :ok <- authorize_change(socket) do
+      do_delete_post(socket)
     end
   end
 
   @impl true
   def handle_event("change_status", %{"status" => status}, socket) do
-    case PhoenixKitPosts.update_post(socket.assigns.post, %{status: status}) do
-      {:ok, updated_post} ->
-        {:noreply,
-         socket
-         |> assign(:post, updated_post)
-         |> put_flash(:info, "Post status updated to #{status}")}
-
-      {:error, _} ->
-        {:noreply, socket |> put_flash(:error, "Failed to update post status")}
+    with :ok <- authorize_change(socket) do
+      do_change_status(socket, status)
     end
   end
 
@@ -167,14 +163,56 @@ defmodule PhoenixKitPosts.Web.Details do
     {:noreply, assign(socket, :post, updated_post)}
   end
 
-  ## --- Private Helper Functions ---
+  # Delete and status changes are for the author or a `posts.manage_all`
+  # holder; the buttons are hidden for everyone else, and a crafted event
+  # is refused here.
+  defp authorize_change(socket) do
+    post = socket.assigns.post
 
-  defp user_is_admin?(user) do
-    Roles.user_has_role_owner?(user) or Roles.user_has_role_admin?(user)
+    if post && Access.can_manage_post?(socket.assigns[:phoenix_kit_current_scope], post) do
+      :ok
+    else
+      {:noreply,
+       put_flash(socket, :error, gettext("You don't have permission to change this post"))}
+    end
   end
 
-  defp can_edit_post?(user, post) do
-    user.uuid == post.user_uuid or user_is_admin?(user)
+  defp do_delete_post(socket) do
+    case PhoenixKitPosts.delete_post(socket.assigns.post, Actor.opts(socket)) do
+      {:ok, _} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Post deleted successfully")
+         |> push_navigate(to: Routes.path("/admin/posts"))}
+
+      {:error, _} ->
+        {:noreply, socket |> put_flash(:error, "Failed to delete post")}
+    end
+  end
+
+  defp do_change_status(socket, status) do
+    case PhoenixKitPosts.update_post(socket.assigns.post, %{status: status}) do
+      {:ok, updated_post} ->
+        {:noreply,
+         socket
+         |> assign(:post, updated_post)
+         |> put_flash(:info, "Post status updated to #{status}")}
+
+      {:error, _} ->
+        {:noreply, socket |> put_flash(:error, "Failed to update post status")}
+    end
+  end
+
+  ## --- Private Helper Functions ---
+
+  # The author as this viewer may see them: the email for their own post or
+  # with `posts.view_all`, else the author's username.
+  defp author_label(scope, post) do
+    cond do
+      is_nil(post.user) -> "Unknown"
+      Access.can_see_author_email?(scope, post) -> post.user.email
+      true -> Map.get(post.user, :username) || gettext("Another user")
+    end
   end
 
   defp format_post_type("post"), do: "Post"

@@ -66,6 +66,13 @@ repo_available =
       false
   end
 
+# `Scope.can?/2` asks the module registry whether a key's module is enabled,
+# and `grant_permission/3` validates keys against it, so the permission tests
+# need it running (they register `PhoenixKitPosts` themselves).
+# Role and permission writes broadcast on core's internal PubSub.
+{:ok, _} = PhoenixKit.ModuleRegistry.start_link([])
+{:ok, _} = PhoenixKit.PubSub.Manager.start_link([])
+
 # The builds-alone test needs `PhoenixKit.TestSupport.ModuleChainCheck`, which
 # ships in the first core release after 2.64.1; against an older core it is
 # excluded.
