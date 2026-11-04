@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- **Leaf is a direct dependency, `>= 0.10.0 and < 1.0.0`.** The post editor renders `Leaf` itself but relied on core's transitive pin, which stops at 0.8. Leaf 0.10.0 sanitizes what it renders, writes typed text back as text rather than markdown syntax, and keeps a `collapse: false` toolbar button on the mobile toolbar.
+
 ## 0.7.0 - 2026-10-27
 
 ### Changed
