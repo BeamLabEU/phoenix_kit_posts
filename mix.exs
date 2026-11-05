@@ -101,6 +101,12 @@ defmodule PhoenixKitPosts.MixProject do
       # to compile in the consumer's build.
       {:phoenix_kit_comments, "~> 0.5"},
 
+      # The post editor (`Web.Edit` renders `Leaf` directly). Declared here
+      # rather than left to core's transitive pin, which stops at 0.8: 0.10.0
+      # sanitizes what it renders and writes typed text back as text rather
+      # than markdown syntax. Open ceiling across later 0.x minors.
+      {:leaf, ">= 0.10.0 and < 1.0.0"},
+
       # LiveView is needed for the admin pages.
       {:phoenix_live_view, "~> 1.1"},
 
