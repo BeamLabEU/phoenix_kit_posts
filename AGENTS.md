@@ -14,11 +14,8 @@ callbacks. `PhoenixKitPosts` is both the `PhoenixKit.Module` implementation
 and the context module for every post operation. This is a library, not a
 standalone Phoenix app.
 
-- **Depends on:** `phoenix_kit` `>= 2.38.0 and < 3.0.0` (Hex; a hard floor, because core's
-  chain adds `phoenix_kit_posts.time_zone` at V185 and `Post` maps it, so
-  every read and write of the table fails with `42703 undefined_column` on an
-  older core, and because `Post.changeset/2` and `Web.ScheduleInput` call
-  `Utils.TimeZone.valid?/1` and `Utils.Date.parse_datetime_local/2`),
+- **Depends on:** `phoenix_kit` `>= 3.5.0 and < 4.0.0` (Hex; floor 3.5.0, the
+  ecosystem-wide minimum, ceiling open through core 3.x),
   `phoenix_kit_comments` `~> 0.3` (hard; `Web.Details` does an unguarded
   `use PhoenixKitComments.Embed`), `phoenix_live_view` `~> 1.1`, `mdex`
   `~> 0.13` (Markdown rendering on the details page; declared directly
@@ -90,7 +87,7 @@ plain Hex pin, so a local comments checkout means a temporary
 `{:phoenix_kit_comments, path: "../phoenix_kit_comments", override: true}`
 reverted together with `mix.lock` before committing.
 `test/core_pin_conformance_test.exs` fails on a committed `path:` dep and on a
-three-segment core pin (`~> 2.38.0` would exclude the next core minor for every
+three-segment core pin (`~> 3.5.0` would exclude the next core minor for every
 host); move its `@must_admit` / `@must_reject` lists together with the pin.
 
 Repo-local aliases:
@@ -134,7 +131,7 @@ Repo-local aliases:
   need `*_noop` anchors today.
 - JS hooks: one bundle, `priv/static/assets/phoenix_kit_posts.js`, assigning
   `window.PhoenixKitPostsHooks` and declared by `js_sources/0` (`@impl` is
-  fine — the 2.16 core floor declares the callback). It holds
+  fine — the core floor declares the callback). It holds
   `PhoenixKitPostsMediaInserter`, the post editor's media inserter. Hook names
   stay namespaced because the fold into `window.PhoenixKitHooks` is
   last-write-wins across every module's bundle and core's own hooks. Never

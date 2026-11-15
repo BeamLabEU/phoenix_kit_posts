@@ -5,53 +5,24 @@ defmodule PhoenixKitPosts.CorePinConformanceTest do
   Guards the `:phoenix_kit` requirement against being re-narrowed to a single
   core MINOR, and against a local path override reaching a commit.
 
-  The trap is the three-segment form: `~> 2.16.x` expands to
-  `>= 2.16.x and < 2.17.0`, so no 2.17 or later core satisfies it. The breakage
+  The trap is the three-segment form: `~> 3.5.0` expands to
+  `>= 3.5.0 and < 3.6.0`, so no 3.6 or later core satisfies it. The breakage
   lands on CONSUMERS, never here — a host depending on both this module and a
   newer core minor gets an unsolvable dependency set and `mix deps.get` fails
   outright, with no degraded mode. Nothing else in this repo's own test run
   would notice, which is why the check is a test rather than a convention.
 
-  What this does NOT forbid is raising the FLOOR. `>= 2.38.0 and < 3.0.0` still
-  admits every later 2.x, and the floor has to track the oldest core that has
-  every function this module calls — and every COLUMN its schemas map:
-
-    * `Post` maps `time_zone`, added to `phoenix_kit_posts` by core's V185
-      (released in 2.16.0). A schema field with no column is not a feature
-      that degrades: Ecto names every field in every SELECT, so on an older
-      core `42703 undefined_column` comes back from every read and write of
-      the table — listing posts, publishing, the scheduled sweep — and this
-      module's context rescues turn that into a plausible nothing. A floor
-      left at 2.0 buys a host a silently empty Posts admin.
-    * `Post.changeset/2` calls `Utils.TimeZone.valid?/1`, and
-      `Web.ScheduleInput` reaches `Utils.Date.parse_datetime_local/2` where it
-      resolves a wall clock through `TimeZone.from_wall/2`. Both arrived in
-      core 2.13.9 — below it the call raises, and the parse that does exist
-      reads `Europe/Tallinn` as offset `0` and schedules the post on UTC with
-      no error anywhere.
-
-  The column sets the floor here, so it is 2.16 rather than the 2.14 the
-  timezone behaviour alone would want. Raise this alongside `mix.exs` whenever
-  a newly-adopted core API, BEHAVIOUR, or migration sets a higher one.
-
-  Core 1.7 is deliberately excluded: core 2.0.0 squashed the migration chain to
-  a V135 floor and this module is verified only against that baseline.
-
-  The floor is `>= 2.38.0 and < 3.0.0` now: the actor and the activity log
-  come from `PhoenixKitWeb.Actor` and `Activity.log/3`, first shipped in core
-  2.38.0 and no longer feature-detected — an older core does not compile the
-  package. Any earlier floor's reasons above still hold below it. Keep the
-  compound form: patch-precise at the bottom, open through every later 2.x
-  minor at the top.
+  The requirement is `>= 3.5.0 and < 4.0.0`: floor 3.5.0 (the ecosystem-wide
+  minimum), ceiling open through every core 3.x. What this does NOT forbid is
+  raising the FLOOR: it has to track the oldest core that has every function
+  this module calls. Keep the compound form: patch-precise at the bottom,
+  open through every later 3.x minor at the top.
   """
 
-  # Floor: core 2.16.0 (V185's `phoenix_kit_posts.time_zone`). Everything above
-  # it, forever, must stay admitted — that is the open-ceiling invariant this
-  # test exists for. Move both lists together with the pin in mix.exs.
-  @must_admit ["2.65.0", "2.65.1", "2.99.4", "3.0.0", "3.9.9"]
-  @must_reject ["1.7.236", "2.0.0", "2.16.0", "2.16.9", "2.17.0", "2.37.5", "2.64.9", "4.0.0"]
+  @must_admit ["3.5.0", "3.5.1", "3.6.0", "3.9.9"]
+  @must_reject ["1.7.236", "2.0.0", "2.65.0", "2.99.4", "3.0.0", "3.4.0", "3.4.9", "4.0.0"]
 
-  test "the :phoenix_kit requirement admits every core >= 2.65.0 minor and nothing else" do
+  test "the :phoenix_kit requirement admits every core >= 3.5.0 minor and nothing else" do
     requirement = core_requirement()
 
     assert match?({:ok, _parsed}, Version.parse_requirement(requirement)),
@@ -61,7 +32,7 @@ defmodule PhoenixKitPosts.CorePinConformanceTest do
       assert Version.match?(version, requirement),
              "`:phoenix_kit` requirement #{inspect(requirement)} rejects core #{version}. " <>
                "A pin that excludes a core minor breaks `mix deps.get` for every host " <>
-               "running this module alongside that core. Keep the floor patch-precise and the ceiling open (`>= 2.38.0 and < 3.0.0`)."
+               "running this module alongside that core. Keep the floor patch-precise and the ceiling open (`>= 3.5.0 and < 4.0.0`)."
     end
 
     for version <- @must_reject do

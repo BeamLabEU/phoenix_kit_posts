@@ -79,22 +79,9 @@ defmodule PhoenixKitPosts.MixProject do
       # migration chain that builds this module's tables, which is why the
       # integration suite cares which core resolves here.
       #
-      # 2.16 is the floor, and it is a hard one: core's V185 adds
-      # `phoenix_kit_posts.time_zone`, which `Post` maps. Ecto selects every
-      # field of a schema, so against an older core it is not the new feature
-      # that degrades — every read and write of the table fails with
-      # `42703 undefined_column`, and the module's rescues turn that into a
-      # plausible nothing. 2.16 also clears `Utils.TimeZone.valid?/1` and
-      # `from_wall/2` (2.13.9), which `Post.changeset/2` and the schedule
-      # input call on every save.
-      # 2.38.0 is the floor now: the actor and the activity log come from
-      # `PhoenixKitWeb.Actor` and `PhoenixKit.Activity.log/3`, first shipped
-      # there and no longer feature-detected, so a lower core fails to compile.
-      # Patch-precise floor in the compound form, so the ceiling stays open
-      # through every later 2.x minor (see test/core_pin_conformance_test.exs).
-      # Floor 2.65.0: the first core with the `file_references/0` and `expected_schema/0`
-      # callbacks this module implements (`@impl`). The ceiling is open through core 3.x.
-      pk_dep(:phoenix_kit, ">= 2.65.0 and < 4.0.0"),
+      # Floor 3.5.0 (the ecosystem-wide minimum), ceiling open through every
+      # core 3.x (see test/core_pin_conformance_test.exs).
+      pk_dep(:phoenix_kit, ">= 3.5.0 and < 4.0.0"),
       # Comments module for post detail page comments section. 0.2.6 is the
       # floor: `Web.Details` does `use PhoenixKitComments.Embed`, which that
       # release first published. The `use` is unguarded, so 0.2.0–0.2.5 fails
