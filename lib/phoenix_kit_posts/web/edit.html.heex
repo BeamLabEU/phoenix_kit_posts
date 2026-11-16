@@ -105,7 +105,7 @@
                     height="400px"
                     debounce={400}
                     toolbar={[:image, :video]}
-                    wiki_links={%{resolve: true}}
+                    wiki_links={%{resolve: true, follow: :modifier}}
                   />
                   <label class="label">
                     <span class="fieldset-label text-base-content/70">
@@ -439,4 +439,9 @@
     hidden
   >
   </div>
+
+  <%!-- Receives `push_event("phoenix-kit-posts:open-url", %{url})` from a
+       Ctrl/Cmd-click on a wiki link and opens it in a new tab, so following a
+       link never discards the post being edited. Same bundle as above. --%>
+  <div id="post-content-link-opener" phx-hook="PhoenixKitPostsLinkOpener" hidden></div>
 

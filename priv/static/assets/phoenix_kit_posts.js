@@ -107,4 +107,29 @@
       window.removeEventListener("phx:insert-media", this.onInsertMedia);
     },
   };
+
+  // Consumes `push_event("phoenix-kit-posts:open-url", %{url})` from
+  // PhoenixKitPosts.Web.Edit — a Ctrl/Cmd-click on a wiki link — and opens the
+  // URL in a new tab, so the post being edited is never navigated away from.
+  // Only a same-origin path is opened: the server builds it, but nothing here
+  // should become an open redirect if that ever changes.
+  window.PhoenixKitPostsHooks.PhoenixKitPostsLinkOpener = {
+    mounted() {
+      this.onOpenUrl = (event) => {
+        const url = (event.detail || {}).url;
+        if (typeof url !== "string" || url[0] !== "/" || url[1] === "/" || url[1] === "\\") {
+          return;
+        }
+
+        const opened = window.open(url, "_blank");
+        if (opened) opened.opener = null;
+      };
+
+      window.addEventListener("phx:phoenix-kit-posts:open-url", this.onOpenUrl);
+    },
+
+    destroyed() {
+      window.removeEventListener("phx:phoenix-kit-posts:open-url", this.onOpenUrl);
+    },
+  };
 })();

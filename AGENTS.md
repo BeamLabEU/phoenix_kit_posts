@@ -16,10 +16,12 @@ standalone Phoenix app.
 
 - **Depends on:** `phoenix_kit` `>= 3.5.0 and < 4.0.0` (Hex; floor 3.5.0, the
   ecosystem-wide minimum, ceiling open through core 3.x),
-  `phoenix_kit_comments` `~> 0.3` (hard; `Web.Details` does an unguarded
-  `use PhoenixKitComments.Embed`), `phoenix_live_view` `~> 1.1`, `mdex`
-  `~> 0.13` (Markdown rendering on the details page; declared directly
-  because core carries no Markdown dep). The Leaf editor comes through core.
+  `phoenix_kit_comments` `~> 0.5` (hard; `Web.Details` does an unguarded
+  `use PhoenixKitComments.Embed`), `leaf` `>= 0.10.1 and < 1.0.0` (the
+  post editor; declared directly because core's own pin still admits
+  0.4–0.9, and 0.10.1 stops dropping text typed after a wiki link),
+  `phoenix_live_view` `~> 1.1`, `mdex` `~> 0.13` (Markdown rendering on the
+  details page, wiki links included).
 - **Consumed by:** no sibling module depends on the package. Core reaches it
   optionally (`Code.ensure_loaded?/1`): `PhoenixKit.ResourceLinks` registers
   `PhoenixKitPosts` as the `"post"` comment resource handler, the Sitemap
@@ -57,7 +59,8 @@ standalone Phoenix app.
   would be added.
 - Its own editor or media picker: the editor is core's Leaf component and the
   picker is core's `MediaSelectorModal`. The module's one JS bundle
-  (`js_sources/0`) carries a single hook, the editor's media inserter.
+  (`js_sources/0`) carries two hooks, the editor's media inserter and its
+  wiki-link opener.
 - Its own PubSub topics: nothing here broadcasts.
 - A comments handler registration in host config: core's `ResourceLinks`
   registers `"post"` automatically when the module is loaded.
@@ -132,7 +135,9 @@ Repo-local aliases:
 - JS hooks: one bundle, `priv/static/assets/phoenix_kit_posts.js`, assigning
   `window.PhoenixKitPostsHooks` and declared by `js_sources/0` (`@impl` is
   fine — the core floor declares the callback). It holds
-  `PhoenixKitPostsMediaInserter`, the post editor's media inserter. Hook names
+  `PhoenixKitPostsMediaInserter`, the post editor's media inserter, and
+  `PhoenixKitPostsLinkOpener`, which opens a Ctrl/Cmd-clicked wiki link in
+  a new tab (same-origin paths only). Hook names
   stay namespaced because the fold into `window.PhoenixKitHooks` is
   last-write-wins across every module's bundle and core's own hooks. Never
   register a hook or a page helper from an inline `<script>` in a template:
@@ -209,10 +214,25 @@ Repo-local aliases:
 - Post content is Markdown, rendered on the details page by MDEx with GFM
   extensions and `render: [unsafe: true]`, then passed through core's
   `HtmlSanitizer.sanitize/1`. Never render post HTML without the sanitizer.
+- Wiki links: `[[Target]]` / `[[Target|Alias]]` / `[[Target#Heading]]` in
+  content. `PhoenixKitPosts.resolve_wiki_targets/2` is the one resolver (one
+  query; slug first, then title case-insensitively, oldest post wins a
+  shared title; `#heading` ignored; capped at 200 targets) and always gets
+  `Access.list_opts/1`, so a link never reveals a post its viewer may not
+  see. `Web.Edit` answers Leaf's `{:leaf_resolve_links, …}` with it; the
+  editor uses `follow: :modifier` (a bare click edits the link), and
+  `{:leaf_link_clicked, …}` re-resolves the target server-side (the
+  payload's `href` is client-supplied) and pushes
+  `phoenix-kit-posts:open-url` so the post opens in a NEW tab — navigating
+  the editor's own tab would discard unsaved work. A missing target opens
+  `/admin/posts/new?title=…`, which prefills the title. `Web.Details`
+  rewrites MDEx `WikiLink` nodes in the AST (`wikilinks_title_after_pipe`):
+  a resolved one links to the post, any other becomes its plain text.
 - Editor mode: the setting value goes straight to Leaf's `:mode`, whose
   normalizer has no catch-all, so `Web.Edit.__normalize_editor_mode__/1` maps
   anything outside `[:visual, :hybrid, :markdown, :html]` to `:hybrid`.
-  `PhoenixKit.Settings.get_editor_mode/0` is probed at runtime.
+  `PhoenixKit.Settings.get_editor_mode/0` is called directly (the core
+  floor has it); a raise (no repo) falls back to `:hybrid`.
 - Media: `PostMedia` rows are unique on `(post_uuid, position)`; the
   featured image IS the row at `position: 1` (`set_featured_image/2` deletes
   and reinserts it in a transaction), so a reorder that moves another file
@@ -334,13 +354,13 @@ lib/
       settings.ex (+ .html.heex)          # the posts_* settings page
       schedule_input.ex                   # datetime-local <-> UTC in the editor's zone
 priv/gettext/                             # default.pot + en/et/ru
-priv/static/assets/phoenix_kit_posts.js   # js_sources/0 bundle: PhoenixKitPostsMediaInserter
+priv/static/assets/phoenix_kit_posts.js   # js_sources/0 bundle: PhoenixKitPostsMediaInserter, PhoenixKitPostsLinkOpener
 test/support/                             # Test.Repo, DataCase (fixtures + assert_activity_count/3)
 ```
 
 Key context areas in `PhoenixKitPosts`: CRUD (`create_post/2` requires an
 existing user, `update_post/2`, `delete_post/2`, `get_post/2`, `get_post!/2`,
-`get_post_by_slug/2`, `list_posts/1` with `:user_uuid` / `:status` / `:type` /
+`get_post_by_slug/2`, `resolve_wiki_targets/2`, `list_posts/1` with `:user_uuid` / `:status` / `:type` /
 `:search` / `:page` + `:per_page` / `:preload`, `count_posts/1`,
 `list_public_posts/1`); publishing (`publish_post/2`, `schedule_post/4`,
 `unschedule_post/1`, `draft_post/1`, `process_scheduled_posts/0`); counter

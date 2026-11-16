@@ -266,7 +266,7 @@ msgstr ""
 msgid "Publish post"
 msgstr ""
 
-#: lib/phoenix_kit_posts/web/edit.ex:462
+#: lib/phoenix_kit_posts/web/edit.ex:524
 #, elixir-autogen, elixir-format
 msgid "Something went wrong. Please try again."
 msgstr ""
@@ -277,7 +277,7 @@ msgstr ""
 msgid "View post"
 msgstr ""
 
-#: lib/phoenix_kit_posts/web/edit.ex:94
+#: lib/phoenix_kit_posts/web/edit.ex:89
 #: lib/phoenix_kit_posts/web/group_edit.ex:123
 #, elixir-autogen, elixir-format
 msgid "Edit"
@@ -305,19 +305,19 @@ msgstr ""
 msgid "New group"
 msgstr ""
 
-#: lib/phoenix_kit_posts/web/edit.ex:124
+#: lib/phoenix_kit_posts/web/edit.ex:122
 #, elixir-autogen, elixir-format
 msgid "New post"
 msgstr ""
 
 #: lib/phoenix_kit_posts/web/details.ex:49
-#: lib/phoenix_kit_posts/web/edit.ex:55
+#: lib/phoenix_kit_posts/web/edit.ex:50
 #, elixir-autogen, elixir-format
 msgid "Post"
 msgstr ""
 
 #: lib/phoenix_kit_posts/web/details.ex:50
-#: lib/phoenix_kit_posts/web/edit.ex:56
+#: lib/phoenix_kit_posts/web/edit.ex:51
 #: lib/phoenix_kit_posts/web/group_edit.ex:46
 #: lib/phoenix_kit_posts/web/groups.ex:43
 #: lib/phoenix_kit_posts/web/posts.ex:67
@@ -331,8 +331,8 @@ msgstr ""
 msgid "Settings"
 msgstr ""
 
-#: lib/phoenix_kit_posts/web/details.ex:214
-#: lib/phoenix_kit_posts/web/edit.html.heex:276
+#: lib/phoenix_kit_posts/web/details.ex:215
+#: lib/phoenix_kit_posts/web/edit.html.heex:277
 #: lib/phoenix_kit_posts/web/posts.ex:332
 #, elixir-autogen, elixir-format
 msgid "Another user"
@@ -344,7 +344,7 @@ msgstr ""
 msgid "You don't have permission to change the Posts settings"
 msgstr ""
 
-#: lib/phoenix_kit_posts/web/details.ex:176
+#: lib/phoenix_kit_posts/web/details.ex:177
 #: lib/phoenix_kit_posts/web/posts.ex:319
 #, elixir-autogen, elixir-format
 msgid "You don't have permission to change this post"
@@ -358,4 +358,9 @@ msgstr ""
 #: lib/phoenix_kit_posts/web/posts.ex:281
 #, elixir-autogen, elixir-format
 msgid "You don't have permission to add posts to this group"
+msgstr ""
+
+#: lib/phoenix_kit_posts/web/edit.ex:382
+#, elixir-autogen, elixir-format
+msgid "No post with this title yet. Ctrl/Cmd-click to start one."
 msgstr ""

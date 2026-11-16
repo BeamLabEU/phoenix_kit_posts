@@ -82,17 +82,19 @@ defmodule PhoenixKitPosts.MixProject do
       # Floor 3.5.0 (the ecosystem-wide minimum), ceiling open through every
       # core 3.x (see test/core_pin_conformance_test.exs).
       pk_dep(:phoenix_kit, ">= 3.5.0 and < 4.0.0"),
-      # Comments module for post detail page comments section. 0.2.6 is the
-      # floor: `Web.Details` does `use PhoenixKitComments.Embed`, which that
-      # release first published. The `use` is unguarded, so 0.2.0–0.2.5 fails
-      # to compile in the consumer's build.
+      # Comments module for post detail page comments section. `Web.Details`
+      # does an unguarded `use PhoenixKitComments.Embed` (first published in
+      # 0.2.6), so the dep is hard; 0.5 is the line this release is built and
+      # tested against.
       {:phoenix_kit_comments, "~> 0.5"},
 
-      # The post editor (`Web.Edit` renders `Leaf` directly). Declared here
-      # rather than left to core's transitive pin, which stops at 0.8: 0.10.0
-      # sanitizes what it renders and writes typed text back as text rather
-      # than markdown syntax. Open ceiling across later 0.x minors.
-      {:leaf, ">= 0.10.0 and < 1.0.0"},
+      # The post editor (`Web.Edit` renders `Leaf` directly, with wiki links).
+      # Declared here rather than left to core's transitive pin, which still
+      # admits 0.4–0.9. Floor 0.10.1: 0.10.0 sanitizes what it renders and
+      # writes typed text back as text rather than markdown syntax, and 0.10.1
+      # stops dropping text typed right after a `[[wiki link]]` on save.
+      # Open ceiling across later 0.x minors.
+      {:leaf, ">= 0.10.1 and < 1.0.0"},
 
       # LiveView is needed for the admin pages.
       {:phoenix_live_view, "~> 1.1"},

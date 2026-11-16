@@ -546,6 +546,76 @@ defmodule PhoenixKitPosts do
     end
   end
 
+  # The most targets one `resolve_wiki_targets/2` call looks up. The editor
+  # sends what the client found, so the list is client-controlled; a target
+  # past the cap is answered as missing.
+  @max_wiki_targets 200
+
+  @doc """
+  Resolves wiki-link targets (the `Target` of `[[Target]]` in post content)
+  to posts, in one query.
+
+  A target matches a post by slug first (unambiguous), then by title,
+  case-insensitively (what a writer actually types between the brackets).
+  Surrounding whitespace and a `#heading` suffix are ignored. When several
+  posts share a title the oldest wins, so the answer does not change as
+  posts are added.
+
+  Returns `%{target => %Post{} | nil}` with one entry for every binary in
+  `targets` (at most #{@max_wiki_targets}; the rest are left out).
+
+  ## Options
+
+    - `:visible_to` - as in `list_posts/1`; a post the viewer may not see
+      resolves to `nil`, so a link never reveals that it exists
+  """
+  def resolve_wiki_targets(targets, opts \\ []) when is_list(targets) do
+    names =
+      targets
+      |> Enum.filter(&is_binary/1)
+      |> Enum.uniq()
+      |> Enum.take(@max_wiki_targets)
+      |> Map.new(&{&1, wiki_target_name(&1)})
+
+    lookups = names |> Map.values() |> Enum.reject(&(&1 == "")) |> Enum.uniq()
+    {by_slug, by_title} = wiki_target_posts(lookups, Keyword.get(opts, :visible_to, :all))
+
+    Map.new(names, fn {target, name} ->
+      {target, Map.get(by_slug, name) || Map.get(by_title, String.downcase(name))}
+    end)
+  end
+
+  @doc """
+  The name a wiki-link target refers to: trimmed, without a `#heading`.
+  `"My Post#Intro"` and `" My Post "` both name `"My Post"`.
+  """
+  def wiki_target_name(target) when is_binary(target) do
+    target |> String.split("#", parts: 2) |> hd() |> String.trim()
+  end
+
+  defp wiki_target_posts([], _visible_to), do: {%{}, %{}}
+
+  defp wiki_target_posts(names, visible_to) do
+    lowered = names |> Enum.map(&String.downcase/1) |> Enum.uniq()
+
+    rows =
+      from(p in Post,
+        where: p.slug in ^names or fragment("lower(?)", p.title) in ^lowered,
+        order_by: [asc: p.inserted_at, asc: p.uuid],
+        select: {p, fragment("lower(?)", p.title)}
+      )
+      |> maybe_filter_visible_to(visible_to)
+      |> repo().all()
+
+    by_slug = Map.new(rows, fn {post, _} -> {post.slug, post} end)
+
+    # Oldest first, so `Map.put_new/3` keeps the oldest post per title.
+    by_title =
+      Enum.reduce(rows, %{}, fn {post, title}, acc -> Map.put_new(acc, title, post) end)
+
+    {by_slug, by_title}
+  end
+
   @doc """
   Lists posts with optional filtering and pagination.
 

@@ -24,7 +24,6 @@ defmodule PhoenixKitPosts.Web.Edit do
   # this line would still bind to core's backend.
   use Gettext, backend: PhoenixKitPosts.Gettext
 
-  alias Leaf
   alias Phoenix.Component
 
   import Leaf, only: [leaf_editor: 1]
@@ -104,11 +103,14 @@ defmodule PhoenixKitPosts.Web.Edit do
     end
   end
 
-  def handle_params(_params, _uri, socket) do
+  # `?title=` prefills the title: a Ctrl/Cmd-click on a wiki link to a post
+  # that does not exist yet lands here (see `handle_info/2` for
+  # `:leaf_link_clicked`).
+  def handle_params(params, _uri, socket) do
     current_user = socket.assigns.current_user
 
     form_data = %{
-      "title" => "",
+      "title" => prefill_title(params),
       "sub_title" => "",
       "type" => "post",
       "status" => Settings.get_setting("posts_default_status", "draft"),
@@ -306,29 +308,44 @@ defmodule PhoenixKitPosts.Web.Edit do
   end
 
   # Leaf found `[[…]]` targets it has no answer for. Only the host knows what
-  # exists, so resolve them against the posts here and reply.
-  #
-  # A target matches a post by slug first, then by title case-insensitively —
-  # slug because it is unambiguous, title because that is what someone actually
-  # types between the brackets. `seq` is echoed back so Leaf can drop an answer
-  # a later keystroke already superseded.
+  # exists, so resolve them against the posts here and reply. A post the
+  # editor may not see answers as missing, so a link never reveals it. `seq`
+  # is echoed back so Leaf can drop an answer a later keystroke superseded.
   @impl true
   def handle_info({:leaf_resolve_links, %{editor_id: id, targets: targets, seq: seq}}, socket) do
-    resolved = Map.new(targets, fn target -> {target, resolve_wiki_target(target)} end)
+    resolved =
+      targets
+      |> PhoenixKitPosts.resolve_wiki_targets(wiki_link_opts(socket))
+      |> Map.new(fn {target, post} -> {target, wiki_link_target(post)} end)
 
     send_update(Leaf, id: id, action: :link_targets, seq: seq, targets: resolved)
 
     {:noreply, socket}
   end
 
-  # A wiki link was clicked. An existing target navigates; a missing one opens
-  # the new-post form with the title prefilled, which is the Obsidian gesture —
-  # clicking a link that does not exist yet is how you create it.
+  # A wiki link was Ctrl/Cmd-clicked (`follow: :modifier` in the template; a
+  # bare click edits the link). An existing post opens in a NEW TAB, a missing
+  # one opens the new-post form there with the title prefilled — never this
+  # tab, which would throw away whatever has not been saved yet. The target is
+  # resolved again here: the `href` in the payload comes from the browser.
   @impl true
-  def handle_info({:leaf_link_clicked, %{target: target, href: href}}, socket) do
-    destination = href || Routes.path("/admin/posts/new?title=#{URI.encode(target)}")
+  def handle_info({:leaf_link_clicked, %{target: target}}, socket) when is_binary(target) do
+    name = PhoenixKitPosts.wiki_target_name(target)
 
-    {:noreply, push_navigate(socket, to: destination)}
+    if name == "" do
+      {:noreply, socket}
+    else
+      url =
+        case PhoenixKitPosts.resolve_wiki_targets([target], wiki_link_opts(socket)) do
+          %{^target => %Post{uuid: uuid}} ->
+            Routes.path("/admin/posts/#{uuid}")
+
+          _ ->
+            Routes.path("/admin/posts/new?" <> URI.encode_query(%{"title" => name}))
+        end
+
+      {:noreply, push_event(socket, "phoenix-kit-posts:open-url", %{url: url})}
+    end
   end
 
   @impl true
@@ -343,33 +360,27 @@ defmodule PhoenixKitPosts.Web.Edit do
   def handle_info({:editor_insert_component, _}, socket), do: {:noreply, socket}
   def handle_info({:editor_save_requested, _}, socket), do: {:noreply, socket}
 
-  # Resolve one `[[target]]` against the posts. Returns the shape Leaf expects:
-  # `%{href: …, exists: bool}`.
-  defp resolve_wiki_target(target) do
-    case find_post_for_wiki_target(target) do
-      nil -> %{href: nil, exists: false}
-      post -> %{href: Routes.path("/admin/posts/#{post.uuid}"), exists: true}
-    end
+  defp prefill_title(%{"title" => title}) when is_binary(title) do
+    title |> String.trim() |> String.slice(0, Post.column_widths().title)
   end
 
-  defp find_post_for_wiki_target(target) do
-    trimmed = String.trim(target)
+  defp prefill_title(_params), do: ""
 
-    if trimmed == "" do
-      nil
-    else
-      PhoenixKitPosts.get_post_by_slug(trimmed) || find_post_by_title(trimmed)
-    end
+  # Only posts this editor may see resolve (PhoenixKitPosts.Access).
+  defp wiki_link_opts(socket), do: Access.list_opts(socket.assigns[:phoenix_kit_current_scope])
+
+  # The reply shape Leaf expects: `%{href, exists, title}`, `title` being the
+  # link's tooltip. Leaf ships no wording of its own for a missing target.
+  defp wiki_link_target(%Post{uuid: uuid, title: title}) do
+    %{href: Routes.path("/admin/posts/#{uuid}"), exists: true, title: title}
   end
 
-  # `list_posts/1`'s search is a LIKE over title and content, so it can return
-  # near-misses; take only an exact title match, case-insensitively.
-  defp find_post_by_title(title) do
-    downcased = String.downcase(title)
-
-    [search: title, per_page: 25]
-    |> PhoenixKitPosts.list_posts()
-    |> Enum.find(fn post -> String.downcase(post.title || "") == downcased end)
+  defp wiki_link_target(nil) do
+    %{
+      href: nil,
+      exists: false,
+      title: gettext("No post with this title yet. Ctrl/Cmd-click to start one.")
+    }
   end
 
   defp do_insert_component(socket, type) when type in [:image, :video] do

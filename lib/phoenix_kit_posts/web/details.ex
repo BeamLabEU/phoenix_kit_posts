@@ -92,7 +92,10 @@ defmodule PhoenixKitPosts.Web.Details do
          socket
          |> assign(:page_title, post.title)
          |> assign(:post, post)
-         |> assign(:rendered_content, render_markdown_content(post.content))
+         |> assign(
+           :rendered_content,
+           __render_content__(post.content, socket.assigns[:phoenix_kit_current_scope])
+         )
          |> assign(:liked_by_user, liked_by_user)
          |> assign(:loading, false)}
     end
@@ -237,14 +240,56 @@ defmodule PhoenixKitPosts.Web.Details do
   defp format_status_badge_class("scheduled"), do: "badge badge-info"
   defp format_status_badge_class(_), do: "badge badge-ghost"
 
-  defp render_markdown_content(content) when is_binary(content) and content != "" do
-    case MDEx.to_html(content, mdex_options()) do
-      {:ok, html} -> HtmlSanitizer.sanitize(html)
+  # `[[Target]]` / `[[Target|Alias]]` (what the editor's Leaf writes) parse as
+  # MDEx wiki links. Each is pointed at the post it names, resolved the way the
+  # editor resolves it; one that names no post the viewer may see becomes its
+  # plain text rather than a link to nowhere — or a hint that a draft exists.
+  # Rewritten in the AST, so `[[…]]` inside code is never touched.
+  #
+  # Public (double-underscore, undocumented) only so the rendering can be
+  # tested without mounting the page.
+  @doc false
+  def __render_content__(content, scope) when is_binary(content) and content != "" do
+    with {:ok, document} <- MDEx.parse_document(content, mdex_options()),
+         {:ok, html} <- MDEx.to_html(resolve_wiki_links(document, scope), mdex_options()) do
+      HtmlSanitizer.sanitize(html)
+    else
       {:error, _error} -> ""
     end
   end
 
-  defp render_markdown_content(_), do: ""
+  def __render_content__(_content, _scope), do: ""
+
+  defp resolve_wiki_links(document, scope) do
+    {_document, targets} =
+      MDEx.traverse_and_update(document, [], fn
+        %MDEx.WikiLink{url: url} = node, acc -> {node, [url | acc]}
+        node, acc -> {node, acc}
+      end)
+
+    case targets do
+      [] ->
+        document
+
+      targets ->
+        resolved = PhoenixKitPosts.resolve_wiki_targets(targets, Access.list_opts(scope))
+
+        MDEx.traverse_and_update(document, fn
+          %MDEx.WikiLink{url: url} = node ->
+            case Map.get(resolved, url) do
+              %{uuid: uuid} -> %{node | url: Routes.path("/admin/posts/#{uuid}")}
+              nil -> %MDEx.Text{literal: plain_text(node)}
+            end
+
+          node ->
+            node
+        end)
+    end
+  end
+
+  defp plain_text(%{nodes: nodes}), do: Enum.map_join(nodes, &plain_text/1)
+  defp plain_text(%{literal: literal}) when is_binary(literal), do: literal
+  defp plain_text(_node), do: ""
 
   # Mirrors the previous Earmark configuration (phoenix_kit dropped its
   # transitive, now-retired earmark dep in 1.7.161):
@@ -256,7 +301,13 @@ defmodule PhoenixKitPosts.Web.Details do
   # matching the old `code_class_prefix: "language-"`.
   defp mdex_options do
     [
-      extension: [strikethrough: true, table: true, autolink: true, tasklist: true],
+      extension: [
+        strikethrough: true,
+        table: true,
+        autolink: true,
+        tasklist: true,
+        wikilinks_title_after_pipe: true
+      ],
       parse: [smart: true],
       render: [unsafe: true]
     ]

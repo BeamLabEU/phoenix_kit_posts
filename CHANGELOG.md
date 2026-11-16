@@ -2,9 +2,15 @@
 
 ## Unreleased
 
+### Added
+
+- **`[[wiki links]]` between posts.** In the post editor `[[Target]]`, `[[Target|Alias]]` and `[[Target#Heading]]` render as links: a target names a post by slug, or by title case-insensitively (`PhoenixKitPosts.resolve_wiki_targets/2`, one query for the whole document). A target with no post is shown muted, with a tooltip. Ctrl/Cmd-click follows a link **in a new tab**, so the post being edited is never navigated away from; following a missing target opens a new post with that title prefilled (`/admin/posts/new?title=…`). A bare click edits the link. On the post page the same links point at the posts they name; a target that names nothing becomes plain text. A post the viewer may not see (someone else's draft, without `posts.view_all`) resolves as missing everywhere, so a link never reveals that it exists.
+
 ### Changed
 
-- **Leaf is a direct dependency, `>= 0.10.0 and < 1.0.0`.** The post editor renders `Leaf` itself but relied on core's transitive pin, which stops at 0.8. Leaf 0.10.0 sanitizes what it renders, writes typed text back as text rather than markdown syntax, and keeps a `collapse: false` toolbar button on the mobile toolbar.
+- **The `phoenix_kit` floor is `>= 3.5.0 and < 4.0.0`** (the ecosystem-wide minimum core), up from 2.65.0. The runtime feature detection for older cores (`Settings.get_editor_mode/0`) is gone.
+- **Leaf is a direct dependency, `>= 0.10.1 and < 1.0.0`.** The post editor renders `Leaf` itself but relied on core's transitive pin, which still admits 0.4–0.9. Leaf 0.10 sanitizes what it renders, writes typed text back as text rather than markdown syntax, and keeps a `collapse: false` toolbar button on the mobile toolbar; 0.10.1 stops losing text typed right after a wiki link.
+- Locked dependencies refreshed (`phoenix_kit` 3.6.0, `phoenix_kit_comments` 0.6.0, `leaf` 0.12.0, `mdex` 0.14.7).
 
 ## 0.7.0 - 2026-10-27
 
