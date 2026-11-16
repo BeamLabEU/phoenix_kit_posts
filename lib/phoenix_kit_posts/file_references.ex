@@ -1,7 +1,7 @@
 defmodule PhoenixKitPosts.FileReferences do
   @moduledoc """
   The places in this module's tables that point at a stored file, for the
-  orphan-file check of core's storage (`PhoenixKit.Module.file_references/0`).
+  orphan-file check of core's storage (`c:PhoenixKit.Module.file_references/0`).
 
   A file one of these rows names is in use and must never be read as an orphan:
   core would queue it for `DeleteOrphanedFileJob`. Each pair is a table and the

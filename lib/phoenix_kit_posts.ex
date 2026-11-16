@@ -157,7 +157,8 @@ defmodule PhoenixKitPosts do
 
   @doc """
   The manifest of this module's tables, for `mix phoenix_kit.repair` and
-  `mix phoenix_kit.doctor`; see `PhoenixKitPosts.ExpectedSchema`.
+  `mix phoenix_kit.doctor`. The manifest module (`ExpectedSchema`) is generated
+  from `PhoenixKitPosts.Migrations` and is not part of the public docs.
   """
   @impl PhoenixKit.Module
   def expected_schema, do: PhoenixKitPosts.ExpectedSchema
