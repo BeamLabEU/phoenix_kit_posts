@@ -563,6 +563,25 @@ the code (`Post.changeset/2` for slug and schedule rules,
 `PhoenixKitPosts.transition_to_public/2` for the publish compare-and-swap,
 `Web.ScheduleInput` for the timezone round trip).
 
+## Content-Security-Policy
+
+The module works under a host policy that allows inline code by nonce only
+(`script-src 'self' 'nonce-…'`); core's guide is `guides/content-security-policy.md`.
+It renders no inline `<script>` / `<style>` and no inline event handler today.
+
+- No inline event handlers (`onclick=`, `onerror=` …), in markup or in HTML the
+  bundle builds: no nonce covers an attribute. Use a `phx-` binding, or a hook /
+  listener in `priv/static/assets/phoenix_kit_posts.js`.
+- A new inline `<style>` / `<script>` carries the page's nonce. Core's
+  `PhoenixKitWeb.CSP.nonce/1` is newer than this module's core floor, so read it
+  through a feature-detecting helper (`Code.ensure_loaded?/1` +
+  `function_exported?/3` + `apply/3`, answering `nil` on an older core; reference:
+  `PhoenixKitComments.Web.CSP`). Never raise the core floor for it.
+- A `<style>` / `<script>` the bundle creates is stamped before insertion:
+  `window.PhoenixKitInternals && window.PhoenixKitInternals.adoptStyle && window.PhoenixKitInternals.adoptStyle(el)`.
+- `test/csp_inline_tags_test.exs` enforces all of it. Inline `style="…"` attributes
+  are not covered yet.
+
 ## Versioning & releases
 
 SemVer. The version is single-sourced in `mix.exs` (`@version`); `version/0`
